@@ -1,0 +1,106 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+
+const slaHours: Record<string, number> = {
+  LOW: 72,
+  MEDIUM: 48,
+  HIGH: 24,
+  CRITICAL: 8,
+};
+
+export async function GET(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status");
+    const priority = searchParams.get("priority");
+    const companyId = searchParams.get("companyId");
+    const assignedTo = searchParams.get("assignedTo");
+
+    const where: Record<string, unknown> = {};
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+    if (companyId) where.companyId = companyId;
+    if (assignedTo) where.assignedTo = assignedTo;
+
+    const cases = await prisma.supportCase.findMany({
+      where,
+      include: {
+        company: { select: { id: true, name: true } },
+        contact: { select: { id: true, name: true } },
+        assignedUser: { select: { id: true, name: true, email: true } },
+        _count: { select: { comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(cases);
+  } catch (error) {
+    console.error("Error fetching support cases:", error);
+    return NextResponse.json(
+      { error: "Error al obtener casos" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const {
+      companyId,
+      contactId,
+      subject,
+      description,
+      priority,
+      assignedTo,
+    } = body;
+
+    if (!companyId || !subject || !description) {
+      return NextResponse.json(
+        { error: "companyId, subject y description son requeridos" },
+        { status: 400 }
+      );
+    }
+
+    const p = priority || "LOW";
+    const hours = slaHours[p] || 72;
+    const slaDeadline = new Date(Date.now() + hours * 3600000);
+
+    const supportCase = await prisma.supportCase.create({
+      data: {
+        companyId,
+        contactId: contactId || null,
+        subject,
+        description,
+        priority: p,
+        status: "OPEN",
+        slaDeadline,
+        assignedTo: assignedTo || null,
+      },
+      include: {
+        company: { select: { id: true, name: true } },
+        contact: { select: { id: true, name: true } },
+        assignedUser: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    return NextResponse.json(supportCase, { status: 201 });
+  } catch (error) {
+    console.error("Error creating support case:", error);
+    return NextResponse.json(
+      { error: "Error al crear caso" },
+      { status: 500 }
+    );
+  }
+}

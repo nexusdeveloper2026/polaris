@@ -1,0 +1,397 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CompanyType {
+  MAIN
+  BRANCH
+}
+
+enum VisitType {
+  DEMO
+  INFO_GATHERING
+  INSTALLATION
+  INDUCTION
+  REINDUCTION
+  POST_SALE
+  TECHNICAL
+}
+
+enum VisitStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ProductType {
+  PRODUCT
+  SERVICE
+}
+
+enum ClientProductStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum SupportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ReportType {
+  ERP_INSTALLATION
+  TELECOM_NETWORK
+  SECURITY_CAMERAS
+}
+
+enum ImplSheetStatus {
+  DRAFT
+  COMPLETED
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  roleId        String?
+  role          Role?    @relation(fields: [roleId], references: [id])
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  assignedVisits   Visit[]              @relation("AssignedUser")
+  assignedCases    SupportCase[]        @relation("AssignedSupportUser")
+  transfers        Transfer[]           @relation("TransferUser")
+  approvedTransfers Transfer[]          @relation("ApprovedTransfer")
+  comments         SupportCaseComment[]
+  alerts           Alert[]
+  createdReports   TechnicalReport[]    @relation("ReportCreator")
+  createdSheets    ImplementationSheet[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
+  permissions Json?
+
+  users User[]
+
+  @@map("roles")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Company {
+  id          String      @id @default(cuid())
+  name        String
+  taxId       String?     @unique
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  type        CompanyType @default(MAIN)
+  parentId    String?
+  parent      Company?    @relation("CompanyHierarchy", fields: [parentId], references: [id])
+  branches    Company[]   @relation("CompanyHierarchy")
+  notes       String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  contacts         Contact[]
+  clientProducts   ClientProduct[]
+  licenses         License[]
+  visits           Visit[]
+  supportCases     SupportCase[]
+  technicalReports TechnicalReport[]
+  implSheets       ImplementationSheet[]
+
+  @@map("companies")
+}
+
+model Contact {
+  id         String  @id @default(cuid())
+  companyId  String
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name       String
+  position   String?
+  phone      String?
+  email      String?
+  isPrimary  Boolean @default(false)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  visits       Visit[]
+  supportCases SupportCase[]
+
+  @@map("contacts")
+}
+
+model ProductCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products Product[]
+
+  @@map("product_categories")
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  categoryId  String?
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
+  type        ProductType   @default(PRODUCT)
+  price       Decimal       @db.Decimal(10, 2)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  clientProducts ClientProduct[]
+  licenses       License[]
+
+  @@map("products")
+}
+
+model ClientProduct {
+  id        String             @id @default(cuid())
+  companyId String
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product            @relation(fields: [productId], references: [id])
+  quantity  Int                @default(1)
+  price     Decimal            @db.Decimal(10, 2)
+  startDate DateTime?
+  endDate   DateTime?
+  status    ClientProductStatus @default(ACTIVE)
+  notes     String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@map("client_products")
+}
+
+model License {
+  id          String        @id @default(cuid())
+  companyId   String
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  licenseKey  String        @unique
+  productId   String
+  product     Product       @relation(fields: [productId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  maxUsers    Int           @default(1)
+  status      LicenseStatus @default(ACTIVE)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("licenses")
+}
+
+model Visit {
+  id            String      @id @default(cuid())
+  companyId     String
+  company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId     String?
+  contact       Contact?    @relation(fields: [contactId], references: [id])
+  type          VisitType
+  scheduledDate DateTime
+  completedDate DateTime?
+  status        VisitStatus @default(SCHEDULED)
+  assignedTo    String?
+  assignedUser  User?       @relation("AssignedUser", fields: [assignedTo], references: [id])
+  notes         String?
+  reportUrl     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  technicalReports TechnicalReport[]
+
+  @@map("visits")
+}
+
+model SupportCase {
+  id           String         @id @default(cuid())
+  companyId    String
+  company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId    String?
+  contact      Contact?       @relation(fields: [contactId], references: [id])
+  subject      String
+  description  String         @db.Text
+  priority     SupportPriority @default(MEDIUM)
+  status       SupportStatus  @default(OPEN)
+  slaDeadline  DateTime?
+  assignedTo   String?
+  assignedUser User?          @relation("AssignedSupportUser", fields: [assignedTo], references: [id])
+  resolvedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  comments SupportCaseComment[]
+
+  @@map("support_cases")
+}
+
+model SupportCaseComment {
+  id        String      @id @default(cuid())
+  caseId    String
+  case      SupportCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  comment   String      @db.Text
+  createdAt DateTime    @default(now())
+
+  @@map("support_case_comments")
+}
+
+model Transfer {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation("TransferUser", fields: [userId], references: [id])
+  fromLocation   String
+  toLocation     String
+  transferDate   DateTime
+  reason         String         @db.Text
+  approvedById   String?
+  approvedBy     User?          @relation("ApprovedTransfer", fields: [approvedById], references: [id])
+  status         TransferStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("transfers")
+}
+
+model Alert {
+  id                String   @id @default(cuid())
+  type              String
+  title             String
+  message           String   @db.Text
+  relatedEntityType String?
+  relatedEntityId   String?
+  isRead            Boolean  @default(false)
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+
+  @@map("alerts")
+}
+
+model TechnicalReport {
+  id            String     @id @default(cuid())
+  visitId       String?
+  visit         Visit?     @relation(fields: [visitId], references: [id])
+  companyId     String
+  company       Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  reportType    ReportType
+  title         String
+  content       String     @db.Text
+  findings      String?    @db.Text
+  recommendations String?  @db.Text
+  createdBy     String
+  creator       User       @relation("ReportCreator", fields: [createdBy], references: [id])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@map("technical_reports")
+}
+
+model ImplementationSheet {
+  id            String          @id @default(cuid())
+  companyId     String
+  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialData Json
+  products      Json
+  contractTerms Json?
+  notes         String?
+  status        ImplSheetStatus @default(DRAFT)
+  createdBy     String
+  creator       User            @relation(fields: [createdBy], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("implementation_sheets")
+}
