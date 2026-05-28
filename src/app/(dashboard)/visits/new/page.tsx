@@ -36,7 +36,10 @@ export default function NewVisitPage() {
         fetch("/api/companies?isActive=true"),
         fetch("/api/users?isActive=true"),
       ]);
-      if (compRes.ok) setCompanies(await compRes.json());
+      if (compRes.ok) {
+        const json = await compRes.json();
+        setCompanies(json.data ?? json);
+      }
       if (userRes.ok) setUsers(await userRes.json());
     }
     load();
