@@ -5,15 +5,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { PageHeader, EmptyState } from "@/components/ui/page-header";
 import { formatDate } from "@/lib/utils";
+import { ClipboardList, Plus } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   DRAFT: "Borrador",
@@ -56,12 +51,15 @@ export default async function ImplementationSheetsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Hojas de Implementación</h1>
-        <Link href="/implementation-sheets/new">
-          <Button>Nueva Hoja</Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Fichas de Implementación"
+        subtitle="Gestiona las fichas de implementación de proyectos"
+        actions={
+          <Link href="/implementation-sheets/new">
+            <Button><Plus className="mr-2 h-4 w-4" />Nueva Ficha</Button>
+          </Link>
+        }
+      />
 
       <Table>
         <TableHeader>
@@ -76,26 +74,18 @@ export default async function ImplementationSheetsPage({
         <TableBody>
           {sheets.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-gray-500">
-                No hay hojas de implementación registradas
+              <TableCell colSpan={5}>
+                <EmptyState icon={<ClipboardList className="h-12 w-12" />} message="No hay fichas de implementación registradas" />
               </TableCell>
             </TableRow>
           ) : (
             sheets.map((s: { id: string; company: { id: string; name: string }; creator: { id: string; name: string | null }; status: string; createdAt: Date }) => (
               <TableRow key={s.id}>
-                <TableCell className="font-medium">{s.company.name}</TableCell>
-                <TableCell>{s.creator.name || "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariants[s.status] || "default"}>
-                    {statusLabels[s.status] || s.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatDate(s.createdAt)}</TableCell>
-                <TableCell>
-                  <Link href={`/implementation-sheets/${s.id}`}>
-                    <Button variant="ghost" size="sm">Ver</Button>
-                  </Link>
-                </TableCell>
+                <TableCell className="font-medium text-navy-900">{s.company.name}</TableCell>
+                <TableCell className="text-navy-500">{s.creator.name || "—"}</TableCell>
+                <TableCell><Badge variant={statusVariants[s.status] || "default"}>{statusLabels[s.status] || s.status}</Badge></TableCell>
+                <TableCell className="text-sm text-navy-400">{formatDate(s.createdAt)}</TableCell>
+                <TableCell><Link href={`/implementation-sheets/${s.id}`}><Button variant="ghost" size="sm">Ver</Button></Link></TableCell>
               </TableRow>
             ))
           )}

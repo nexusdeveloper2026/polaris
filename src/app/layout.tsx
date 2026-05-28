@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NEXUS ERP - Sistema de Gestión",
-  description: "Sistema de gestión empresarial NEXUS ERP",
+  title: "NEXUS POLARIS - Sistema de Gestión Empresarial",
+  description: "Sistema de gestión empresarial NEXUS POLARIS",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-full bg-gray-50 font-sans text-gray-900">{children}</body>
+      <body className="min-h-full bg-surface font-sans text-navy-900">{children}</body>
     </html>
   );
 }

@@ -5,15 +5,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { PageHeader, EmptyState } from "@/components/ui/page-header";
 import { formatDate, getSlaStatus } from "@/lib/utils";
+import { TicketCheck, Plus } from "lucide-react";
 
 const priorityVariants: Record<string, "default" | "success" | "warning" | "danger"> = {
   LOW: "success",
@@ -83,44 +78,37 @@ export default async function SupportCasesPage({
   const params = await searchParams;
   const cases = await getCases(params);
 
+  const selectClass = "h-10 rounded-xl border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 transition-all duration-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Casos de Soporte</h1>
-        <Link href="/support-cases/new">
-          <Button>Nuevo Caso</Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Casos de Soporte"
+        subtitle="Gestiona los casos de soporte técnico"
+        actions={
+          <Link href="/support-cases/new">
+            <Button><Plus className="mr-2 h-4 w-4" />Nuevo Caso</Button>
+          </Link>
+        }
+      />
 
-      <form className="flex gap-4" method="GET">
-        <select
-          name="priority"
-          className="flex h-10 w-full max-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          defaultValue={params.priority || ""}
-        >
-          <option value="">Todas las prioridades</option>
-          {Object.entries(priorityLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          name="status"
-          className="flex h-10 w-full max-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          defaultValue={params.status || ""}
-        >
-          <option value="">Todos los estados</option>
-          {Object.entries(statusLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="outline">
-          Filtrar
-        </Button>
-      </form>
+      <div className="animate-fade-in-up animate-delay-1 rounded-2xl border border-navy-100 bg-white p-5 shadow-sm">
+        <form className="flex flex-wrap gap-4" method="GET">
+          <select name="priority" className={selectClass} defaultValue={params.priority || ""}>
+            <option value="">Todas las prioridades</option>
+            {Object.entries(priorityLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <select name="status" className={selectClass} defaultValue={params.status || ""}>
+            <option value="">Todos los estados</option>
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <Button type="submit" variant="outline">Filtrar</Button>
+        </form>
+      </div>
 
       <Table>
         <TableHeader>
@@ -137,8 +125,8 @@ export default async function SupportCasesPage({
         <TableBody>
           {cases.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-gray-500">
-                No hay casos registrados
+              <TableCell colSpan={7}>
+                <EmptyState icon={<TicketCheck className="h-12 w-12" />} message="No hay casos registrados" />
               </TableCell>
             </TableRow>
           ) : (
@@ -146,35 +134,13 @@ export default async function SupportCasesPage({
               const slaStatus = getSlaStatus(c.slaDeadline);
               return (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">
-                    {c.company.name}
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {c.subject}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={priorityVariants[c.priority] || "default"}>
-                      {priorityLabels[c.priority] || c.priority}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariants[c.status] || "default"}>
-                      {statusLabels[c.status] || c.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={slaVariants[slaStatus] || "default"}>
-                      {slaLabels[slaStatus] || slaStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {c.assignedUser?.name || c.assignedUser?.email || "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Link href={`/support-cases/${c.id}`}>
-                      <Button variant="ghost" size="sm">Ver</Button>
-                    </Link>
-                  </TableCell>
+                  <TableCell className="font-medium text-navy-900">{c.company.name}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-navy-500">{c.subject}</TableCell>
+                  <TableCell><Badge variant={priorityVariants[c.priority] || "default"}>{priorityLabels[c.priority] || c.priority}</Badge></TableCell>
+                  <TableCell><Badge variant={statusVariants[c.status] || "default"}>{statusLabels[c.status] || c.status}</Badge></TableCell>
+                  <TableCell><Badge variant={slaVariants[slaStatus] || "default"}>{slaLabels[slaStatus] || slaStatus}</Badge></TableCell>
+                  <TableCell className="text-navy-500">{c.assignedUser?.name || c.assignedUser?.email || "—"}</TableCell>
+                  <TableCell><Link href={`/support-cases/${c.id}`}><Button variant="ghost" size="sm">Ver</Button></Link></TableCell>
                 </TableRow>
               );
             })

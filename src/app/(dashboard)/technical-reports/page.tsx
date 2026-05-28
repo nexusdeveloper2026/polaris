@@ -5,15 +5,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { PageHeader, EmptyState } from "@/components/ui/page-header";
 import { formatDate } from "@/lib/utils";
+import { FileText, Plus } from "lucide-react";
 
 const reportTypeLabels: Record<string, string> = {
   ERP_INSTALLATION: "Instalación ERP",
@@ -53,32 +48,31 @@ export default async function TechnicalReportsPage({
   const params = await searchParams;
   const reports = await getReports(params);
 
+  const selectClass = "h-10 rounded-xl border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 transition-all duration-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Reportes Técnicos</h1>
-        <Link href="/technical-reports/new">
-          <Button>Nuevo Reporte</Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Informes Técnicos"
+        subtitle="Gestiona los informes y reportes técnicos"
+        actions={
+          <Link href="/technical-reports/new">
+            <Button><Plus className="mr-2 h-4 w-4" />Nuevo Informe</Button>
+          </Link>
+        }
+      />
 
-      <form className="flex gap-4" method="GET">
-        <select
-          name="reportType"
-          className="flex h-10 w-full max-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          defaultValue={params.reportType || ""}
-        >
-          <option value="">Todos los tipos</option>
-          {Object.entries(reportTypeLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="outline">
-          Filtrar
-        </Button>
-      </form>
+      <div className="animate-fade-in-up animate-delay-1 rounded-2xl border border-navy-100 bg-white p-5 shadow-sm">
+        <form className="flex flex-wrap gap-4" method="GET">
+          <select name="reportType" className={selectClass} defaultValue={params.reportType || ""}>
+            <option value="">Todos los tipos</option>
+            {Object.entries(reportTypeLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <Button type="submit" variant="outline">Filtrar</Button>
+        </form>
+      </div>
 
       <Table>
         <TableHeader>
@@ -94,27 +88,19 @@ export default async function TechnicalReportsPage({
         <TableBody>
           {reports.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-gray-500">
-                No hay reportes registrados
+              <TableCell colSpan={6}>
+                <EmptyState icon={<FileText className="h-12 w-12" />} message="No hay informes registrados" />
               </TableCell>
             </TableRow>
           ) : (
             reports.map((r: { id: string; title: string; company: { id: string; name: string }; reportType: string; creator: { id: string; name: string | null }; createdAt: Date }) => (
               <TableRow key={r.id}>
-                <TableCell className="font-medium">{r.title}</TableCell>
-                <TableCell>{r.company.name}</TableCell>
-                <TableCell>
-                  <Badge variant={reportTypeVariants[r.reportType] || "default"}>
-                    {reportTypeLabels[r.reportType] || r.reportType}
-                  </Badge>
-                </TableCell>
-                <TableCell>{r.creator.name || "—"}</TableCell>
-                <TableCell>{formatDate(r.createdAt)}</TableCell>
-                <TableCell>
-                  <Link href={`/technical-reports/${r.id}`}>
-                    <Button variant="ghost" size="sm">Ver</Button>
-                  </Link>
-                </TableCell>
+                <TableCell className="font-medium text-navy-900">{r.title}</TableCell>
+                <TableCell className="text-navy-500">{r.company.name}</TableCell>
+                <TableCell><Badge variant={reportTypeVariants[r.reportType] || "default"}>{reportTypeLabels[r.reportType] || r.reportType}</Badge></TableCell>
+                <TableCell className="text-navy-500">{r.creator.name || "—"}</TableCell>
+                <TableCell className="text-sm text-navy-400">{formatDate(r.createdAt)}</TableCell>
+                <TableCell><Link href={`/technical-reports/${r.id}`}><Button variant="ghost" size="sm">Ver</Button></Link></TableCell>
               </TableRow>
             ))
           )}

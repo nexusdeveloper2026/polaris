@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft, Save, Building2 } from "lucide-react";
 
 type Company = { id: string; name: string };
 
@@ -34,9 +35,7 @@ export default function NewCompanyPage() {
       .catch(() => {});
   }, []);
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
@@ -68,27 +67,37 @@ export default function NewCompanyPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Nueva Empresa</h1>
-        <Button variant="outline" onClick={() => router.back()}>
-          Cancelar
+      <div className="animate-fade-in-up flex items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-navy-900">
+            Nueva Empresa
+          </h1>
+          <p className="text-sm text-navy-300">
+            Registra una nueva empresa en el sistema
+          </p>
+        </div>
       </div>
 
-      <Card>
+      <Card className="animate-fade-in-up animate-delay-1">
         <CardHeader>
-          <CardTitle>Información General</CardTitle>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-blue-500" />
+            <CardTitle>Información General</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
+              <div className="animate-scale-in rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
                 {error}
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700">
                 Nombre <span className="text-red-500">*</span>
               </label>
               <Input
@@ -101,17 +110,12 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">RNC</label>
-                <Input
-                  name="taxId"
-                  value={form.taxId}
-                  onChange={handleChange}
-                  placeholder="Número de RNC"
-                />
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-navy-700">RNC</label>
+                <Input name="taxId" value={form.taxId} onChange={handleChange} placeholder="Número de RNC" />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tipo</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-navy-700">Tipo</label>
                 <Select name="type" value={form.type} onChange={handleChange}>
                   <option value="MAIN">Principal</option>
                   <option value="BRANCH">Sucursal</option>
@@ -120,83 +124,49 @@ export default function NewCompanyPage() {
             </div>
 
             {form.type === "BRANCH" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Empresa Principal</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-navy-700">Empresa Principal</label>
                 <Select name="parentId" value={form.parentId} onChange={handleChange}>
                   <option value="">Seleccionar empresa principal</option>
                   {mainCompanies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </Select>
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Dirección</label>
-              <Input
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                placeholder="Dirección física"
-              />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700">Dirección</label>
+              <Input name="address" value={form.address} onChange={handleChange} placeholder="Dirección física" />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Teléfono</label>
-                <Input
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  placeholder="Teléfono"
-                />
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-navy-700">Teléfono</label>
+                <Input name="phone" value={form.phone} onChange={handleChange} placeholder="Teléfono" />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <Input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="correo@ejemplo.com"
-                />
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-navy-700">Email</label>
+                <Input name="email" type="email" value={form.email} onChange={handleChange} placeholder="correo@ejemplo.com" />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Sitio Web</label>
-              <Input
-                name="website"
-                value={form.website}
-                onChange={handleChange}
-                placeholder="https://ejemplo.com"
-              />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700">Sitio Web</label>
+              <Input name="website" value={form.website} onChange={handleChange} placeholder="https://ejemplo.com" />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Notas</label>
-              <Textarea
-                name="notes"
-                value={form.notes}
-                onChange={handleChange}
-                placeholder="Notas adicionales..."
-                rows={3}
-              />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700">Notas</label>
+              <Textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Notas adicionales..." rows={3} />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                Cancelar
-              </Button>
+            <div className="flex gap-3 pt-4">
               <Button type="submit" disabled={loading}>
+                <Save className="mr-2 h-4 w-4" />
                 {loading ? "Guardando..." : "Guardar Empresa"}
               </Button>
+              <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
             </div>
           </form>
         </CardContent>

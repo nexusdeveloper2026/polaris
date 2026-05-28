@@ -1,12 +1,12 @@
 import { cn } from "@/lib/utils";
 
 const variants = {
-  default: "bg-gray-100 text-gray-800",
-  primary: "bg-blue-100 text-blue-800",
-  success: "bg-green-100 text-green-800",
-  warning: "bg-yellow-100 text-yellow-800",
-  danger: "bg-red-100 text-red-800",
-  info: "bg-cyan-100 text-cyan-800",
+  default: "bg-navy-100 text-navy-600",
+  primary: "bg-blue-100 text-blue-700",
+  success: "bg-emerald-100 text-emerald-700",
+  warning: "bg-amber-100 text-amber-700",
+  danger: "bg-red-100 text-red-700",
+  info: "bg-cyan-100 text-cyan-700",
 } as const;
 
 function Badge({
@@ -21,11 +21,12 @@ function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all duration-300",
         variants[variant],
         className
       )}
     >
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
       {children}
     </span>
   );

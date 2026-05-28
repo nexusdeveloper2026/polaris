@@ -23,7 +23,7 @@ export async function GET(
         include: { product: { include: { category: true } } },
         orderBy: { createdAt: "desc" },
       },
-      licenses: {
+      licenseCompanies: {
         include: { product: true },
         orderBy: { createdAt: "desc" },
       },
@@ -34,7 +34,7 @@ export async function GET(
       _count: {
         select: {
           contacts: true,
-          licenses: true,
+          licenseCompanies: true,
           clientProducts: true,
           visits: true,
           supportCases: true,

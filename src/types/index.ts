@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
+
 export type NavItem = {
   title: string;
   href: string;
-  icon: string;
+  icon: ReactNode;
   roles?: string[];
 };
 
@@ -9,7 +11,7 @@ export type DashboardCard = {
   title: string;
   value: string | number;
   description?: string;
-  icon: string;
+  icon: ReactNode;
   href: string;
   color: string;
 };

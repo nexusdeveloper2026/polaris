@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/db";
 export const dynamic = 'force-dynamic';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageHeader, EmptyState } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { CompaniesFilters } from "./companies-filters";
+import { Building2, Plus, ChevronRight } from "lucide-react";
 
 interface PageProps {
   searchParams: Promise<{ search?: string; type?: string; page?: string }>;
@@ -18,10 +19,7 @@ const typeBadge = {
 };
 
 export default async function CompaniesPage({ searchParams }: PageProps) {
-  const { search, type, page: pageStr } = await searchParams;
-  const currentPage = Math.max(1, parseInt(pageStr || "1", 10));
-  const limit = 10;
-  const skip = (currentPage - 1) * limit;
+  const { search, type } = await searchParams;
 
   const where: Record<string, unknown> = {};
 
@@ -34,128 +32,128 @@ export default async function CompaniesPage({ searchParams }: PageProps) {
     ];
   }
 
-  if (type === "MAIN" || type === "BRANCH") {
-    where.type = type;
+  const hasFilter = !!(search || type);
+
+  let mainCompanies: any[] = [];
+  let branchCount = 0;
+
+  if (type === "BRANCH") {
+    const [branches, total] = await Promise.all([
+      prisma.company.findMany({
+        where: { ...where, type: "BRANCH" },
+        orderBy: { name: "asc" },
+        include: {
+          _count: { select: { contacts: true, licenseCompanies: true, clientProducts: true } },
+          parent: { select: { name: true } },
+        },
+      }),
+      prisma.company.count({ where: { ...where, type: "BRANCH" } }),
+    ]);
+    mainCompanies = branches;
+    branchCount = total;
+  } else {
+    const filterWhere = hasFilter ? where : {};
+    const [mains, orphans] = await Promise.all([
+      prisma.company.findMany({
+        where: { ...filterWhere, type: "MAIN" },
+        orderBy: { name: "asc" },
+        include: {
+          branches: {
+            where: search ? { OR: (where.OR as any) } : undefined,
+            orderBy: { name: "asc" },
+            include: {
+              _count: { select: { contacts: true, licenseCompanies: true, clientProducts: true } },
+              parent: { select: { name: true } },
+            },
+          },
+          _count: { select: { contacts: true, licenseCompanies: true, clientProducts: true } },
+          parent: { select: { name: true } },
+        },
+      }),
+      hasFilter
+        ? prisma.company.findMany({
+            where: { ...where, type: "BRANCH", parentId: null },
+            orderBy: { name: "asc" },
+            include: {
+              _count: { select: { contacts: true, licenseCompanies: true, clientProducts: true } },
+              parent: { select: { name: true } },
+            },
+          })
+        : Promise.resolve([]),
+    ]);
+    mainCompanies = mains;
+    branchCount = orphans.length + mains.reduce((sum, m) => sum + m.branches.length, 0);
   }
 
-  const [companies, total] = await Promise.all([
-    prisma.company.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: { select: { contacts: true, licenses: true, clientProducts: true } },
-        parent: { select: { name: true } },
-      },
-    }),
-    prisma.company.count({ where }),
-  ]);
+  const total = mainCompanies.length + branchCount;
 
-  const totalPages = Math.ceil(total / limit);
+  function renderCompanyRow(company: any, isBranch = false) {
+    return (
+      <TableRow key={company.id} className={isBranch ? "bg-navy-50/50" : ""}>
+        <TableCell>
+          <div className={`flex items-center gap-2 ${isBranch ? "ml-7" : ""}`}>
+            {isBranch && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-navy-300" />}
+            <div className="min-w-0">
+              <Link href={`/companies/${company.id}`} className="font-medium text-blue-600 hover:underline">
+                {company.name}
+              </Link>
+              {isBranch && company.parent && (
+                <p className="text-xs text-navy-400 mt-0.5 truncate">{company.parent.name}</p>
+              )}
+            </div>
+          </div>
+        </TableCell>
+        <TableCell className="font-mono text-sm text-navy-500">{company.taxId || "-"}</TableCell>
+        <TableCell><Badge variant={typeBadge[company.type as keyof typeof typeBadge]?.variant ?? "default"}>{typeBadge[company.type as keyof typeof typeBadge]?.label ?? company.type}</Badge></TableCell>
+        <TableCell className="text-sm text-navy-400">{formatDate(company.createdAt)}</TableCell>
+        <TableCell><Badge variant={company.isActive ? "success" : "danger"}>{company.isActive ? "Activa" : "Inactiva"}</Badge></TableCell>
+      </TableRow>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Empresas</h1>
-        <Link href="/companies/new">
-          <Button>Nueva Empresa</Button>
-        </Link>
+      <PageHeader
+        title="Empresas"
+        subtitle="Gestiona las empresas del sistema"
+        actions={
+          <Link href="/companies/new">
+            <Button><Plus className="mr-2 h-4 w-4" />Nueva Empresa</Button>
+          </Link>
+        }
+      />
+
+      <div className="animate-fade-in-up animate-delay-1 rounded-2xl border border-navy-100 bg-white p-5 shadow-sm">
+        <CompaniesFilters currentSearch={search || ""} currentType={type || ""} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CompaniesFilters
-            currentSearch={search || ""}
-            currentType={type || ""}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>RNC</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Empresa Principal</TableHead>
-                <TableHead>Contactos</TableHead>
-                <TableHead>Licencias</TableHead>
-                <TableHead>Creada</TableHead>
-                <TableHead>Estado</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {companies.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center text-gray-500 py-8">
-                    No se encontraron empresas
-                  </TableCell>
-                </TableRow>
-              ) : (
-                companies.map((company) => (
-                  <TableRow key={company.id}>
-                    <TableCell>
-                      <Link
-                        href={`/companies/${company.id}`}
-                        className="font-medium text-blue-600 hover:underline"
-                      >
-                        {company.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{company.taxId || "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant={typeBadge[company.type].variant}>
-                        {typeBadge[company.type].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{company.parent?.name || "-"}</TableCell>
-                    <TableCell>{company._count.contacts}</TableCell>
-                    <TableCell>{company._count.licenses}</TableCell>
-                    <TableCell className="text-sm text-gray-500">
-                      {formatDate(company.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={company.isActive ? "success" : "danger"}>
-                        {company.isActive ? "Activa" : "Inactiva"}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Página {currentPage} de {totalPages} ({total} registros)
-          </p>
-          <div className="flex gap-2">
-            {currentPage > 1 && (
-              <Link
-                href={`/companies?${new URLSearchParams({ ...(search && { search }), ...(type && { type }), page: String(currentPage - 1) }).toString()}`}
-              >
-                <Button variant="outline" size="sm">Anterior</Button>
-              </Link>
-            )}
-            {currentPage < totalPages && (
-              <Link
-                href={`/companies?${new URLSearchParams({ ...(search && { search }), ...(type && { type }), page: String(currentPage + 1) }).toString()}`}
-              >
-                <Button variant="outline" size="sm">Siguiente</Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nombre</TableHead>
+            <TableHead>RNC</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Creada</TableHead>
+            <TableHead>Estado</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {total === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5}>
+                <EmptyState icon={<Building2 className="h-12 w-12" />} message="No se encontraron empresas" />
+              </TableCell>
+            </TableRow>
+          ) : type === "BRANCH" ? (
+            mainCompanies.map((c) => renderCompanyRow(c, true))
+          ) : (
+            mainCompanies.flatMap((main) => [
+              renderCompanyRow(main),
+              ...main.branches.map((b: any) => renderCompanyRow(b, true)),
+            ])
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }

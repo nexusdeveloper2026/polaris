@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             contacts: true,
-            licenses: true,
+            licenseCompanies: true,
             clientProducts: true,
           },
         },

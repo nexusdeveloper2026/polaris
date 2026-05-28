@@ -5,15 +5,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { PageHeader, EmptyState } from "@/components/ui/page-header";
 import { formatDate } from "@/lib/utils";
+import { CalendarCheck, Plus } from "lucide-react";
 
 const typeVariants: Record<string, "default" | "primary" | "info" | "success" | "warning" | "danger"> = {
   DEMO: "primary",
@@ -71,44 +66,37 @@ export default async function VisitsPage({
   const params = await searchParams;
   const visits = await getVisits(params);
 
+  const selectClass = "h-10 rounded-xl border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 transition-all duration-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Visitas</h1>
-        <Link href="/visits/new">
-          <Button>Nueva Visita</Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Visitas"
+        subtitle="Gestiona las visitas programadas a empresas"
+        actions={
+          <Link href="/visits/new">
+            <Button><Plus className="mr-2 h-4 w-4" />Nueva Visita</Button>
+          </Link>
+        }
+      />
 
-      <form className="flex gap-4" method="GET">
-        <select
-          name="type"
-          className="flex h-10 w-full max-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          defaultValue={params.type || ""}
-        >
-          <option value="">Todos los tipos</option>
-          {Object.entries(typeLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          name="status"
-          className="flex h-10 w-full max-w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-          defaultValue={params.status || ""}
-        >
-          <option value="">Todos los estados</option>
-          {Object.entries(statusLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="outline">
-          Filtrar
-        </Button>
-      </form>
+      <div className="animate-fade-in-up animate-delay-1 rounded-2xl border border-navy-100 bg-white p-5 shadow-sm">
+        <form className="flex flex-wrap gap-4" method="GET">
+          <select name="type" className={selectClass} defaultValue={params.type || ""}>
+            <option value="">Todos los tipos</option>
+            {Object.entries(typeLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <select name="status" className={selectClass} defaultValue={params.status || ""}>
+            <option value="">Todos los estados</option>
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <Button type="submit" variant="outline">Filtrar</Button>
+        </form>
+      </div>
 
       <Table>
         <TableHeader>
@@ -124,35 +112,19 @@ export default async function VisitsPage({
         <TableBody>
           {visits.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-gray-500">
-                No hay visitas registradas
+              <TableCell colSpan={6}>
+                <EmptyState icon={<CalendarCheck className="h-12 w-12" />} message="No hay visitas registradas" />
               </TableCell>
             </TableRow>
           ) : (
             visits.map((visit) => (
               <TableRow key={visit.id}>
-                <TableCell className="font-medium">
-                  {visit.company.name}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={typeVariants[visit.type] || "default"}>
-                    {typeLabels[visit.type] || visit.type}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatDate(visit.scheduledDate)}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariants[visit.status] || "default"}>
-                    {statusLabels[visit.status] || visit.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {visit.assignedUser?.name || visit.assignedUser?.email || "—"}
-                </TableCell>
-                <TableCell>
-                  <Link href={`/visits/${visit.id}`}>
-                    <Button variant="ghost" size="sm">Ver</Button>
-                  </Link>
-                </TableCell>
+                <TableCell className="font-medium text-navy-900">{visit.company.name}</TableCell>
+                <TableCell><Badge variant={typeVariants[visit.type] || "default"}>{typeLabels[visit.type] || visit.type}</Badge></TableCell>
+                <TableCell className="text-sm text-navy-400">{formatDate(visit.scheduledDate)}</TableCell>
+                <TableCell><Badge variant={statusVariants[visit.status] || "default"}>{statusLabels[visit.status] || visit.status}</Badge></TableCell>
+                <TableCell className="text-navy-500">{visit.assignedUser?.name || visit.assignedUser?.email || "—"}</TableCell>
+                <TableCell><Link href={`/visits/${visit.id}`}><Button variant="ghost" size="sm">Ver</Button></Link></TableCell>
               </TableRow>
             ))
           )}
