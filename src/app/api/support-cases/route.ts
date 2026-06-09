@@ -40,10 +40,10 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(cases);
-  } catch (error) {
-    console.error("Error fetching support cases:", error);
+  } catch (error: any) {
+    console.error("=== ERROR OBTENIENDO CASOS ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al obtener casos" },
+      { error: `Error al obtener casos: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }
@@ -96,10 +96,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(supportCase, { status: 201 });
-  } catch (error) {
-    console.error("Error creating support case:", error);
+  } catch (error: any) {
+    console.error("=== ERROR CREANDO CASO ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al crear caso" },
+      { error: `Error al crear caso: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }

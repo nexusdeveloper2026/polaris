@@ -15,6 +15,7 @@ import { PermissionEditor } from "@/components/permission-editor";
 import { buildDefaultPermissions, type Permissions } from "@/lib/permissions";
 import { ConfirmDialog } from "@/components/ui/modal";
 import { ArrowLeft, Save, Trash2, Loader2, Shield } from "lucide-react";
+import { toast } from "sonner";
 
 export default function EditRolePage() {
   const router = useRouter();
@@ -68,8 +69,8 @@ export default function EditRolePage() {
     setLoading(false);
 
     if (res.ok) {
+      toast.success("Perfil actualizado correctamente");
       router.push("/roles");
-      router.refresh();
     } else {
       const data = await res.json();
       setError(data.error || "Error al actualizar");
@@ -82,10 +83,11 @@ export default function EditRolePage() {
     setDeleting(false);
     setShowDelete(false);
     if (res.ok) {
+      toast.success("Perfil eliminado correctamente");
       router.push("/roles");
     } else {
       const data = await res.json();
-      alert(data.error || "Error al eliminar");
+      toast.error(data.error || "Error al eliminar");
     }
   }
 

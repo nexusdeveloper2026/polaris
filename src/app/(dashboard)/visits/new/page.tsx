@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateInput } from "@/components/ui/date-input";
 import { FieldIcon, FieldGroup } from "@/components/ui/field-group";
 import { ArrowLeft, Save, CalendarCheck, Building2, User, Tags, Clock, Users, FileText, Info } from "lucide-react";
+import { toast } from "sonner";
 
 type Company = { id: string; name: string };
 type Contact = { id: string; name: string };
@@ -86,6 +87,7 @@ export default function NewVisitPage() {
     setLoading(false);
 
     if (res.ok) {
+      toast.success("Visita programada correctamente");
       router.push("/visits");
       router.refresh();
     } else {

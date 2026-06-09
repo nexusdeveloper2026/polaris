@@ -18,6 +18,7 @@ import {
   ArrowLeft, Save, Building2, Package, CalendarDays, Users, FileText,
   KeyRound, DollarSign, Clock, Gift, Percent, Wrench, GraduationCap, Info, Hash, Tag, Store
 } from "lucide-react";
+import { toast } from "sonner";
 
 type Company = { id: string; name: string };
 type Branch = { id: string; name: string };
@@ -102,6 +103,7 @@ export default function NewLicensePage() {
     setLoading(false);
 
     if (res.ok) {
+      toast.success("Licencia creada correctamente");
       router.push("/licenses");
       router.refresh();
     } else {

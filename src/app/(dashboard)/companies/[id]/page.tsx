@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Building2, ArrowLeft, Users, Package, KeyRound, CalendarCheck } from "lucide-react";
+import { Building2, ArrowLeft, Users, Package, KeyRound, CalendarCheck, Pencil } from "lucide-react";
+import { ECONOMIC_ACTIVITIES } from "@/data/economic-activities";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -55,6 +56,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
     where: { id },
     include: {
       parent: { select: { id: true, name: true } },
+      salesRep: { select: { id: true, name: true, email: true } },
       branches: { select: { id: true, name: true, type: true } },
       contacts: { orderBy: { isPrimary: "desc" } },
       clientProducts: {
@@ -83,9 +85,18 @@ export default async function CompanyDetailPage({ params }: PageProps) {
     <div className="space-y-6">
       <PageHeader
         title={company.name}
-        subtitle={company.taxId ? `RNC: ${company.taxId} · Creada el ${formatDate(company.createdAt)}` : `Creada el ${formatDate(company.createdAt)}`}
+        subtitle={[
+          company.taxId ? `ID: ${company.taxIdType || "V"}-${company.taxId}` : null,
+          `Creada el ${formatDate(company.createdAt)}`,
+          company.salesRep ? `Rep. Ventas: ${company.salesRep.name || company.salesRep.email}` : null,
+        ].filter(Boolean).join(" · ")}
         actions={
           <div className="flex gap-2">
+            <Link href={`/companies/${company.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Pencil className="mr-1.5 h-3.5 w-3.5" />Editar
+              </Button>
+            </Link>
             <Badge variant={typeBadge[company.type].variant}>{typeBadge[company.type].label}</Badge>
             <Badge variant={company.isActive ? "success" : "danger"}>{company.isActive ? "Activa" : "Inactiva"}</Badge>
           </div>
@@ -102,11 +113,12 @@ export default async function CompanyDetailPage({ params }: PageProps) {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
-              { label: "Dirección", value: company.address },
+              { label: "Dirección", value: [company.address, company.localidad, company.parish, company.municipality, company.state, "Venezuela"].filter(Boolean).join(", ") },
               { label: "Teléfono", value: company.phone },
               { label: "Email", value: company.email },
               { label: "Sitio Web", value: company.website },
-            ].map(({ label, value }) => (
+              company.economicActivity ? { label: "Actividad Económica", value: `${company.economicActivity} - ${ECONOMIC_ACTIVITIES.find(a => a.code === company.economicActivity)?.name || ""}` } : null,
+            ].filter((item): item is { label: string; value: string } => item !== null).map(({ label, value }) => (
               <div key={label} className="flex justify-between border-b border-navy-50 pb-2">
                 <span className="text-navy-400">{label}</span>
                 <span className="text-right font-medium text-navy-700">{value || "-"}</span>

@@ -90,6 +90,7 @@ model User {
   roleId        String?
   role          Role?    @relation(fields: [roleId], references: [id])
   isActive      Boolean  @default(true)
+  hasCommissions Boolean @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -100,6 +101,7 @@ model User {
   transfers        Transfer[]           @relation("TransferUser")
   approvedTransfers Transfer[]          @relation("ApprovedTransfer")
   comments         SupportCaseComment[]
+  salesRepCompanies Company[]           @relation("CompanySalesRep")
   alerts           Alert[]
   createdReports   TechnicalReport[]    @relation("ReportCreator")
   createdSheets    ImplementationSheet[]
@@ -160,8 +162,13 @@ model VerificationToken {
 model Company {
   id          String      @id @default(cuid())
   name        String
-  taxId       String?     @unique
+  taxIdType   String?     @default("V")
+  taxId       String?
   address     String?
+  state       String?
+  municipality String?
+  parish      String?
+  localidad   String?
   phone       String?
   email       String?
   website     String?
@@ -171,6 +178,9 @@ model Company {
   branches    Company[]   @relation("CompanyHierarchy")
   notes       String?
   isActive    Boolean     @default(true)
+  salesRepId  String?
+  salesRep    User?       @relation("CompanySalesRep", fields: [salesRepId], references: [id])
+  economicActivity String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

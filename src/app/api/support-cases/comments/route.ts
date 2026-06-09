@@ -43,10 +43,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(created, { status: 201 });
-  } catch (error) {
-    console.error("Error creating comment:", error);
+  } catch (error: any) {
+    console.error("=== ERROR CREANDO COMENTARIO ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al crear comentario" },
+      { error: `Error al crear comentario: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }

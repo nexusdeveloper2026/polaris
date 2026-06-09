@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(role, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: "Error al crear el perfil" }, { status: 500 });
+  } catch (err: any) {
+    console.error("=== ERROR CREANDO PERFIL ===", err?.message, err?.code);
+    return NextResponse.json({ error: `Error al crear el perfil: ${err?.message || "Error desconocido"}${err?.code ? ` [${err.code}]` : ""}` }, { status: 500 });
   }
 }

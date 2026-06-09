@@ -25,10 +25,10 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(sheets);
-  } catch (error) {
-    console.error("Error fetching implementation sheets:", error);
+  } catch (error: any) {
+    console.error("=== ERROR OBTENIENDO HOJAS DE IMPLEMENTACIÓN ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al obtener hojas de implementación" },
+      { error: `Error al obtener hojas de implementación: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }
@@ -67,10 +67,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(sheet, { status: 201 });
-  } catch (error) {
-    console.error("Error creating implementation sheet:", error);
+  } catch (error: any) {
+    console.error("=== ERROR CREANDO HOJA DE IMPLEMENTACIÓN ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al crear hoja de implementación" },
+      { error: `Error al crear hoja de implementación: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }

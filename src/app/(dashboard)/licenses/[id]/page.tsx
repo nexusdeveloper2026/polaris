@@ -21,6 +21,7 @@ import {
   CalendarDays, Users, FileText, Info, Copy, Check, Shield,
   DollarSign, Clock, Gift, Percent, Wrench, GraduationCap, Hash, Tag, Store
 } from "lucide-react";
+import { toast } from "sonner";
 
 type Company = { id: string; name: string };
 type Branch = { id: string; name: string };
@@ -176,6 +177,7 @@ export default function EditLicensePage() {
     setLoading(false);
 
     if (res.ok) {
+      toast.success("Licencia actualizada correctamente");
       router.push("/licenses");
       router.refresh();
     } else {
@@ -190,10 +192,11 @@ export default function EditLicensePage() {
     setDeleting(false);
     setShowDelete(false);
     if (res.ok) {
+      toast.success("Licencia eliminada correctamente");
       router.push("/licenses");
     } else {
       const data = await res.json();
-      alert(data.error || "Error al eliminar");
+      toast.error(data.error || "Error al eliminar");
     }
   }
 

@@ -63,8 +63,9 @@ export async function PUT(
     });
 
     return NextResponse.json(role);
-  } catch {
-    return NextResponse.json({ error: "Error al actualizar el perfil" }, { status: 500 });
+  } catch (err: any) {
+    console.error("=== ERROR ACTUALIZANDO PERFIL ===", err?.message, err?.code);
+    return NextResponse.json({ error: `Error al actualizar el perfil: ${err?.message || "Error desconocido"}${err?.code ? ` [${err.code}]` : ""}` }, { status: 500 });
   }
 }
 
@@ -98,7 +99,8 @@ export async function DELETE(
 
     await prisma.role.delete({ where: { id } });
     return NextResponse.json({ message: "Perfil eliminado" });
-  } catch {
-    return NextResponse.json({ error: "Error al eliminar el perfil" }, { status: 500 });
+  } catch (err: any) {
+    console.error("=== ERROR ELIMINANDO PERFIL ===", err?.message, err?.code);
+    return NextResponse.json({ error: `Error al eliminar el perfil: ${err?.message || "Error desconocido"}${err?.code ? ` [${err.code}]` : ""}` }, { status: 500 });
   }
 }

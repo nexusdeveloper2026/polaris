@@ -47,24 +47,24 @@ export function Modal({ isOpen, onClose, title, children, footer, size = "md", h
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className="fixed inset-0 bg-navy-900/60 backdrop-blur-sm animate-fade-in" />
+      <div className="fixed inset-0 bg-navy-950/60 backdrop-blur-md animate-fade-in dark:bg-black/70" />
       <div className={cn(
-        "relative z-10 w-full animate-scale-in rounded-2xl border border-navy-100 bg-white shadow-2xl",
+        "relative z-10 w-full animate-scale-in overflow-hidden rounded-2xl border border-navy-100/60 bg-white shadow-2xl shadow-navy-950/20 dark:border-white/[0.08] dark:bg-navy-800",
         sizes[size]
       )}>
         {title && (
-          <div className="flex items-center justify-between border-b border-navy-100 px-6 py-4">
-            <h3 className="text-lg font-semibold text-navy-900">{title}</h3>
+          <div className="flex items-center justify-between border-b border-navy-100/60 bg-navy-50/30 px-6 py-4 dark:border-white/[0.06] dark:bg-white/[0.03]">
+            <h3 className="text-lg font-semibold text-navy-900 dark:text-white">{title}</h3>
             {!hideClose && (
-              <button onClick={onClose} className="rounded-lg p-1 text-navy-400 transition-colors hover:bg-navy-50 hover:text-navy-600">
-                <X className="h-5 w-5" />
+              <button onClick={onClose} className="rounded-lg p-1.5 text-navy-400 transition-all duration-200 hover:bg-navy-100 hover:text-navy-600 dark:text-white/40 dark:hover:bg-white/[0.08] dark:hover:text-white/70">
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
         )}
-        {children && <div className="px-6 py-4">{children}</div>}
+        {children && <div className="px-6 py-5">{children}</div>}
         {footer && (
-          <div className="flex items-center justify-end gap-3 border-t border-navy-100 px-6 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-navy-100/60 bg-navy-50/20 px-6 py-4 dark:border-white/[0.06] dark:bg-white/[0.02]">
             {footer}
           </div>
         )}
@@ -103,8 +103,8 @@ export function ConfirmDialog({
       <div className="flex flex-col items-center gap-4 py-2 text-center">
         {icon || (
           <div className={cn(
-            "flex h-14 w-14 items-center justify-center rounded-full",
-            variant === "danger" ? "bg-red-50" : "bg-amber-50"
+            "flex h-14 w-14 items-center justify-center rounded-2xl",
+            variant === "danger" ? "bg-red-50 ring-1 ring-red-100 dark:bg-red-500/10 dark:ring-red-500/20" : "bg-amber-50 ring-1 ring-amber-100 dark:bg-amber-500/10 dark:ring-amber-500/20"
           )}>
             <svg className={cn(
               "h-7 w-7",
@@ -114,7 +114,7 @@ export function ConfirmDialog({
             </svg>
           </div>
         )}
-        <p className="text-sm text-navy-600">{message}</p>
+        <p className="text-sm leading-relaxed text-navy-500 dark:text-white/60">{message}</p>
       </div>
       <div className="mt-6 flex items-center justify-center gap-3">
         <Button variant="outline" onClick={onClose} disabled={loading}>

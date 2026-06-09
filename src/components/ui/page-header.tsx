@@ -22,11 +22,11 @@ export function PageHeader({ title, subtitle, actions, backHref }: PageHeaderPro
           </Link>
         )}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-navy-900">
+          <h1 className="text-2xl font-bold tracking-tight text-navy-900 dark:text-white">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-1 text-sm text-navy-300">{subtitle}</p>
+            <p className="mt-1 text-sm text-navy-300 dark:text-white/40">{subtitle}</p>
           )}
         </div>
       </div>
@@ -37,7 +37,7 @@ export function PageHeader({ title, subtitle, actions, backHref }: PageHeaderPro
 
 export function EmptyState({ icon, message }: { icon: ReactNode; message: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 py-12 text-navy-300">
+    <div className="flex flex-col items-center gap-3 py-12 text-navy-300 dark:text-white/30">
       {icon}
       <p className="text-sm">{message}</p>
     </div>

@@ -28,10 +28,10 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(reports);
-  } catch (error) {
-    console.error("Error fetching technical reports:", error);
+  } catch (error: any) {
+    console.error("=== ERROR OBTENIENDO REPORTES TÉCNICOS ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al obtener reportes técnicos" },
+      { error: `Error al obtener reportes técnicos: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }
@@ -80,10 +80,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(report, { status: 201 });
-  } catch (error) {
-    console.error("Error creating technical report:", error);
+  } catch (error: any) {
+    console.error("=== ERROR CREANDO REPORTE TÉCNICO ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al crear reporte técnico" },
+      { error: `Error al crear reporte técnico: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }

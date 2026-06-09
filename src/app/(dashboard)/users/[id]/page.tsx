@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/modal";
 import { ArrowLeft, Save, Trash2, Loader2, User, ToggleLeft, ToggleRight } from "lucide-react";
+import { toast } from "sonner";
 
 type Role = { id: string; name: string };
 type UserData = {
@@ -21,6 +22,7 @@ type UserData = {
   name: string | null;
   email: string;
   isActive: boolean;
+  hasCommissions: boolean;
   roleId: string | null;
   role: { id: string; name: string } | null;
 };
@@ -35,6 +37,7 @@ export default function EditUserPage() {
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [hasCommissions, setHasCommissions] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -54,6 +57,7 @@ export default function EditUserPage() {
         setEmail(user.email);
         setRoleId(user.roleId || "");
         setIsActive(user.isActive);
+        setHasCommissions(user.hasCommissions ?? false);
       } else {
         router.push("/users");
       }
@@ -73,6 +77,7 @@ export default function EditUserPage() {
       email,
       roleId: roleId || null,
       isActive,
+      hasCommissions,
     };
     if (password) body.password = password;
 
@@ -85,8 +90,8 @@ export default function EditUserPage() {
     setLoading(false);
 
     if (res.ok) {
+      toast.success("Usuario actualizado correctamente");
       router.push("/users");
-      router.refresh();
     } else {
       const data = await res.json();
       setError(data.error || "Error al actualizar");
@@ -99,10 +104,11 @@ export default function EditUserPage() {
     setDeleting(false);
     setShowDelete(false);
     if (res.ok) {
+      toast.success("Usuario eliminado correctamente");
       router.push("/users");
     } else {
       const data = await res.json();
-      alert(data.error || "Error al eliminar");
+      toast.error(data.error || "Error al eliminar");
     }
   }
 
@@ -215,6 +221,16 @@ export default function EditUserPage() {
                 ))}
               </Select>
             </div>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasCommissions}
+                onChange={(e) => setHasCommissions(e.target.checked)}
+                className="h-4 w-4 rounded border-navy-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-navy-700">Aplica para comisiones (Representante de Ventas)</span>
+            </label>
 
             <div className="flex items-center justify-between pt-2">
               <div className="flex gap-3">

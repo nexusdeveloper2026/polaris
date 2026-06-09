@@ -14,6 +14,7 @@ import {
 import { PermissionEditor } from "@/components/permission-editor";
 import { buildDefaultPermissions, type Permissions } from "@/lib/permissions";
 import { ArrowLeft, Save, Shield } from "lucide-react";
+import { toast } from "sonner";
 
 export default function NewRolePage() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function NewRolePage() {
     setLoading(false);
 
     if (res.ok) {
+      toast.success("Perfil creado correctamente");
       router.push("/roles");
       router.refresh();
     } else {

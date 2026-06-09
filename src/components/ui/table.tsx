@@ -3,7 +3,7 @@ import { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes, forwardRef } from "
 
 const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-hidden rounded-2xl border border-navy-100 bg-white shadow-sm">
+    <div className="relative w-full rounded-2xl border border-navy-100/80 bg-white shadow-modern dark:border-white/[0.08] dark:bg-navy-800/80">
       <table
         ref={ref}
         className={cn("w-full caption-bottom text-sm", className)}
@@ -20,7 +20,10 @@ const TableHeader = forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("bg-gradient-to-r from-navy-50 to-blue-50/50", className)}
+    className={cn(
+      "border-b border-navy-100/60 bg-gradient-to-r from-navy-50/80 to-blue-50/40 dark:border-white/[0.06] dark:from-white/[0.04] dark:to-white/[0.02]",
+      className
+    )}
     {...props}
   />
 ));
@@ -32,10 +35,7 @@ const TableBody = forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn(
-      "[&_tr:last-child]:border-0 [&_tr:last-child]:rounded-b-2xl",
-      className,
-    )}
+    className={cn("[&_tr:last-child]:border-0", className)}
     {...props}
   />
 ));
@@ -48,7 +48,7 @@ const TableRow = forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-navy-50 transition-all duration-200 hover:bg-navy-50/50 active:bg-navy-100/50",
+      "border-b border-navy-50/80 transition-all duration-200 hover:bg-blue-50/30 dark:border-white/[0.04] dark:hover:bg-white/[0.04]",
       className,
     )}
     {...props}
@@ -63,8 +63,8 @@ const TableHead = forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-12 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wider text-navy-500",
-      className,
+      "h-12 px-5 text-left align-middle text-[11px] font-semibold uppercase tracking-wider text-navy-400 dark:text-white/40",
+      className
     )}
     {...props}
   />
@@ -77,7 +77,7 @@ const TableCell = forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("p-4 align-middle text-navy-700", className)}
+    className={cn("px-5 py-3.5 align-middle text-navy-700 dark:text-white/70", className)}
     {...props}
   />
 ));

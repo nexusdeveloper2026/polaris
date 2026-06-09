@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 export function FieldIcon({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: ReactNode }) {
   return (
-    <span className="flex items-center gap-1.5 text-sm font-medium text-navy-700">
-      <Icon className="h-4 w-4 text-navy-400" />
+    <span className="flex items-center gap-1.5 text-sm font-medium text-navy-700 dark:text-white/70">
+      <Icon className="h-4 w-4 text-navy-400 dark:text-white/40" />
       {children}
     </span>
   );

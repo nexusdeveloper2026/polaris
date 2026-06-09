@@ -1,25 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CascadingAddress, type AddressValue } from "@/components/ui/cascading-address";
-import { ArrowLeft, Save, Building2 } from "lucide-react";
+import { Loader2, ArrowLeft, Save, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { ECONOMIC_ACTIVITIES } from "@/data/economic-activities";
 
+type MainCompany = { id: string; name: string };
 type User = { id: string; name: string | null; email: string; hasCommissions: boolean };
-type Company = { id: string; name: string; taxIdType: string | null; taxId: string | null };
 
-export default function NewCompanyPage() {
+export default function EditCompanyPage() {
   const router = useRouter();
-  const [mainCompanies, setMainCompanies] = useState<Company[]>([]);
+  const params = useParams();
+  const id = params.id as string;
+
+  const [mainCompanies, setMainCompanies] = useState<MainCompany[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -31,6 +35,7 @@ export default function NewCompanyPage() {
     type: "MAIN",
     parentId: "",
     notes: "",
+    isActive: true,
     salesRepId: "",
     economicActivity: "",
   });
@@ -44,26 +49,39 @@ export default function NewCompanyPage() {
 
   useEffect(() => {
     Promise.all([
+      fetch(`/api/companies/${id}`).then((r) => r.json()),
       fetch("/api/companies?type=MAIN&limit=100").then((r) => r.json()),
       fetch("/api/users").then((r) => r.json()),
-    ]).then(([companyData, userData]) => {
-      setMainCompanies(companyData.data || []);
+    ]).then(([company, mains, userData]) => {
+      setForm({
+        name: company.name || "",
+        taxIdType: company.taxIdType || "V",
+        taxId: company.taxId || "",
+        phone: company.phone || "",
+        email: company.email || "",
+        website: company.website || "",
+        type: company.type || "MAIN",
+        parentId: company.parentId || "",
+        notes: company.notes || "",
+        isActive: company.isActive ?? true,
+        salesRepId: company.salesRepId || "",
+        economicActivity: company.economicActivity || "",
+      });
+      setAddress({
+        state: company.state || "",
+        municipality: company.municipality || "",
+        parish: company.parish || "",
+        localidad: company.localidad || "",
+        street: company.address || "",
+      });
+      setMainCompanies((mains.data || []).filter((c: MainCompany) => c.id !== id));
       setUsers((Array.isArray(userData) ? userData : userData.data || []).filter((u: User) => u.hasCommissions));
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (form.type === "BRANCH" && form.parentId) {
-      const parent = mainCompanies.find((c) => c.id === form.parentId);
-      if (parent) {
-        setForm((prev) => ({
-          ...prev,
-          taxIdType: parent.taxIdType || "V",
-          taxId: parent.taxId || "",
-        }));
-      }
-    }
-  }, [form.type, form.parentId, mainCompanies]);
+      setLoading(false);
+    }).catch(() => {
+      setError("Error al cargar la empresa");
+      setLoading(false);
+    });
+  }, [id]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -71,7 +89,7 @@ export default function NewCompanyPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
     setError("");
 
     const missing: string[] = [];
@@ -90,13 +108,13 @@ export default function NewCompanyPage() {
 
     if (missing.length > 0) {
       setError(`Los campos obligatorios están incompletos: ${missing.join(", ")}`);
-      setLoading(false);
+      setSaving(false);
       return;
     }
 
     try {
-      const res = await fetch("/api/companies", {
-        method: "POST",
+      const res = await fetch(`/api/companies/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
@@ -110,17 +128,25 @@ export default function NewCompanyPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Error al crear empresa");
+        throw new Error(data.error || "Error al actualizar");
       }
 
-      toast.success("Empresa creada correctamente");
-      router.push("/companies");
+      toast.success("Empresa actualizada correctamente");
+      router.push(`/companies/${id}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-navy-300 dark:text-white/30" />
+      </div>
+    );
   }
 
   return (
@@ -131,10 +157,10 @@ export default function NewCompanyPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-navy-900 dark:text-white">
-            Nueva Empresa
+            Editar Empresa
           </h1>
           <p className="text-sm text-navy-400 dark:text-white/40">
-            Registra una nueva empresa en el sistema
+            Modifica la información de la empresa
           </p>
         </div>
       </div>
@@ -244,6 +270,14 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700 dark:text-white/70">Estado</label>
+              <Select name="isActive" value={String(form.isActive)} onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.value === "true" }))}>
+                <option value="true">Activa</option>
+                <option value="false">Inactiva</option>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
               <label className="text-sm font-medium text-navy-700 dark:text-white/70">Representante de Ventas <span className="text-red-500">*</span></label>
               <Select name="salesRepId" value={form.salesRepId} onChange={handleChange} required>
                 <option value="">Seleccionar representante</option>
@@ -254,9 +288,9 @@ export default function NewCompanyPage() {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={loading}>
-                <Save className="mr-2 h-4 w-4" />
-                {loading ? "Guardando..." : "Guardar Empresa"}
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {saving ? "Guardando..." : "Guardar Cambios"}
               </Button>
               <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
             </div>

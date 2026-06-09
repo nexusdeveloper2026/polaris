@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ArrowLeft, Save, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 type Role = { id: string; name: string };
 
@@ -21,6 +22,7 @@ export default function NewUserPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
+  const [hasCommissions, setHasCommissions] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,12 +41,13 @@ export default function NewUserPage() {
     const res = await fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, roleId: roleId || null }),
+      body: JSON.stringify({ name, email, password, roleId: roleId || null, hasCommissions }),
     });
 
     setLoading(false);
 
     if (res.ok) {
+      toast.success("Usuario creado correctamente");
       router.push("/users");
       router.refresh();
     } else {
@@ -137,6 +140,16 @@ export default function NewUserPage() {
                 ))}
               </Select>
             </div>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasCommissions}
+                onChange={(e) => setHasCommissions(e.target.checked)}
+                className="h-4 w-4 rounded border-navy-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-navy-700">Aplica para comisiones (Representante de Ventas)</span>
+            </label>
 
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={loading}>

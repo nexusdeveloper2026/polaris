@@ -21,10 +21,10 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(alerts);
-  } catch (error) {
-    console.error("Error fetching alerts:", error);
+  } catch (error: any) {
+    console.error("=== ERROR OBTENIENDO ALERTAS ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al obtener alertas" },
+      { error: `Error al obtener alertas: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }
@@ -59,10 +59,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(alert, { status: 201 });
-  } catch (error) {
-    console.error("Error creating alert:", error);
+  } catch (error: any) {
+    console.error("=== ERROR CREANDO ALERTA ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al crear alerta" },
+      { error: `Error al crear alerta: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }
@@ -106,10 +106,10 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json({ message: "Alerta marcada como leída" });
-  } catch (error) {
-    console.error("Error updating alert:", error);
+  } catch (error: any) {
+    console.error("=== ERROR ACTUALIZANDO ALERTA ===", error?.message, error?.code);
     return NextResponse.json(
-      { error: "Error al actualizar alerta" },
+      { error: `Error al actualizar alerta: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
       { status: 500 }
     );
   }
