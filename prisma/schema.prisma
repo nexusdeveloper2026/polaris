@@ -78,6 +78,18 @@ enum RenewalPeriod {
   ANNUAL
 }
 
+enum PaymentMethod {
+  TRANSFERENCIA
+  PAGO_MOVIL
+  EFECTIVO
+  TARJETA_CREDITO
+  TARJETA_DEBITO
+  ZELLE
+  PAYPAL
+  CRYPTO
+  OTRO
+}
+
 enum SupportPriority {
   LOW
   MEDIUM
@@ -142,6 +154,7 @@ model User {
   alerts           Alert[]
   createdReports   TechnicalReport[]    @relation("ReportCreator")
   createdSheets    ImplementationSheet[]
+  createdPayments  LicensePayment[]     @relation("PaymentCreator")
 
   @@map("users")
 }
@@ -349,17 +362,23 @@ model License {
 }
 
 model LicenseAssignment {
-  id            Int         @id @default(autoincrement())
-  licenseId     Int
-  license       License     @relation(fields: [licenseId], references: [id], onDelete: Cascade)
-  companyId     Int
-  company       Company     @relation("LicenseCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  branchId      Int?
-  branch        Company?    @relation("LicenseBranch", fields: [branchId], references: [id])
-  status        LicenseStatus @default(ACTIVE)
-  renewalPeriod RenewalPeriod?
-  assignedAt    DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id               Int            @id @default(autoincrement())
+  licenseId        Int
+  license          License        @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  companyId        Int
+  company          Company        @relation("LicenseCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  branchId         Int?
+  branch           Company?       @relation("LicenseBranch", fields: [branchId], references: [id])
+  status           LicenseStatus  @default(ACTIVE)
+  renewalPeriod    RenewalPeriod?
+  priceOverride    Decimal?       @db.Decimal(12, 2)
+  supportHours     Int?           @default(0)
+  trainingSessions Int?           @default(0)
+  renewalEndDate   DateTime?
+  assignedAt       DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  payments LicensePayment[]
 
   @@unique([licenseId, companyId, branchId])
   @@map("license_assignments")
@@ -488,4 +507,22 @@ model ImplementationSheet {
   updatedAt     DateTime      @updatedAt
 
   @@map("implementation_sheets")
+}
+
+model LicensePayment {
+  id             Int            @id @default(autoincrement())
+  assignmentId   Int
+  assignment     LicenseAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  paymentDate    DateTime       @default(now())
+  paymentMethod  PaymentMethod
+  amount         Decimal        @db.Decimal(12, 2)
+  renewalPeriod  RenewalPeriod
+  renewalEndDate DateTime
+  reference      String?
+  notes          String?
+  createdBy      Int
+  creator        User           @relation("PaymentCreator", fields: [createdBy], references: [id])
+  createdAt      DateTime       @default(now())
+
+  @@map("license_payments")
 }

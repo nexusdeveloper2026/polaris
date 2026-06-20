@@ -102,6 +102,16 @@ export default async function SupportCaseDetailPage({
       where: { id: numericId },
       data,
     });
+
+    if (newStatus === "RESOLVED" || newStatus === "CLOSED") {
+      await prisma.alert.deleteMany({
+        where: {
+          relatedEntityType: "supportCase",
+          relatedEntityId: numericId,
+        },
+      });
+    }
+
     redirect(`/support-cases/${id}`);
   }
 

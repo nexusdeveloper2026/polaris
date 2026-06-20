@@ -117,3 +117,39 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const userId = parseInt(String((session.user as any).id));
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const relatedType = searchParams.get("relatedType");
+    const relatedId = searchParams.get("relatedId");
+
+    if (id) {
+      const deleted = await prisma.alert.deleteMany({ where: { id: parseInt(id), userId } });
+      if (deleted.count === 0) return NextResponse.json({ error: "Alerta no encontrada" }, { status: 404 });
+      return NextResponse.json({ message: "Alerta eliminada" });
+    }
+
+    if (relatedType && relatedId) {
+      await prisma.alert.deleteMany({
+        where: { relatedEntityType: relatedType, relatedEntityId: parseInt(relatedId) },
+      });
+      return NextResponse.json({ message: "Alertas relacionadas eliminadas" });
+    }
+
+    return NextResponse.json({ error: "id o relatedType+relatedId requeridos" }, { status: 400 });
+  } catch (error: any) {
+    console.error("=== ERROR ELIMINANDO ALERTA ===", error?.message, error?.code);
+    return NextResponse.json(
+      { error: `Error al eliminar alerta: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
+      { status: 500 }
+    );
+  }
+}

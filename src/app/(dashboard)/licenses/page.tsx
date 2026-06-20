@@ -26,6 +26,9 @@ type LicenseAssignment = {
   branchId: number | null;
   status: string;
   renewalPeriod: string | null;
+  priceOverride: number | null;
+  supportHours: number | null;
+  trainingSessions: number | null;
   company: { id: number; name: string };
   branch: { id: number; name: string } | null;
   assignedAt: string;
@@ -60,6 +63,9 @@ type Company = { id: number; name: string; branches?: { id: number; name: string
 type ExistingAssignment = {
   assignmentId: number;
   renewalPeriod: string | null;
+  priceOverride: number | null;
+  supportHours: number | null;
+  trainingSessions: number | null;
   status: string;
   companyName: string;
   branchName: string | null;
@@ -104,9 +110,21 @@ const renewalPeriodLabel: Record<string, string> = {
   ANNUAL: "Anual",
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const variant = statusVariant[status] ?? "default";
-  return <Badge variant={variant}>{statusLabel[status] ?? status}</Badge>;
+function StatusBadge({ status, endDate }: { status: string; endDate?: string }) {
+  const computedStatus = (() => {
+    if (status === "CANCELLED") return "CANCELLED";
+    if (status === "SUSPENDED") return "SUSPENDED";
+    if (endDate && new Date(endDate) < new Date()) return "EXPIRED";
+    return "ACTIVE";
+  })();
+  const computedLabel = (() => {
+    if (computedStatus === "CANCELLED") return "Cancelada";
+    if (computedStatus === "EXPIRED") return "Vencida";
+    if (computedStatus === "SUSPENDED") return "Suspendida";
+    return "Activa";
+  })();
+  const variant = computedStatus === "ACTIVE" ? "success" : computedStatus === "EXPIRED" ? "danger" : computedStatus === "SUSPENDED" ? "warning" : "danger";
+  return <Badge variant={variant}>{computedLabel}</Badge>;
 }
 
 function DaysBadge({ endDate }: { endDate: string }) {
@@ -202,6 +220,15 @@ export default function LicensesPage() {
   } | null>(null);
   const [unassigning, setUnassigning] = useState(false);
 
+  const [editingAssignment, setEditingAssignment] = useState<number | null>(null);
+  const [assignmentForm, setAssignmentForm] = useState<{
+    renewalPeriod: string;
+    priceOverride: string;
+    supportHours: string;
+    trainingSessions: string;
+  }>({ renewalPeriod: "", priceOverride: "", supportHours: "0", trainingSessions: "0" });
+  const [savingAssignment, setSavingAssignment] = useState(false);
+
   useEffect(() => { loadLicenses(); }, []);
 
   async function loadCompanies() {
@@ -244,6 +271,9 @@ export default function LicensesPage() {
       map[key] = {
         assignmentId: a.id,
         renewalPeriod: a.renewalPeriod || null,
+        priceOverride: a.priceOverride != null ? Number(a.priceOverride) : null,
+        supportHours: a.supportHours ?? 0,
+        trainingSessions: a.trainingSessions ?? 0,
         status: a.status,
         companyName: a.company.name,
         branchName: a.branch?.name || null,
@@ -290,7 +320,13 @@ export default function LicensesPage() {
   async function handleAssign() {
     if (!templateLicense) return;
 
-    const newAssignments: { companyId: number; branchId?: number }[] = [];
+    const newAssignments: {
+      companyId: number;
+      branchId?: number;
+      priceOverride?: number | null;
+      supportHours?: number | null;
+      trainingSessions?: number | null;
+    }[] = [];
 
     for (const companyId of selectedCompanies) {
       if (existingAssignments[String(companyId)]) continue;
@@ -435,6 +471,53 @@ export default function LicensesPage() {
     }
   }
 
+  function startEditAssignment(assignment: ExistingAssignment) {
+    setEditingAssignment(assignment.assignmentId);
+    setAssignmentForm({
+      renewalPeriod: assignment.renewalPeriod || "",
+      priceOverride: assignment.priceOverride != null ? String(assignment.priceOverride) : "",
+      supportHours: assignment.supportHours != null ? String(assignment.supportHours) : "0",
+      trainingSessions: assignment.trainingSessions != null ? String(assignment.trainingSessions) : "0",
+    });
+  }
+
+  async function handleSaveAssignment() {
+    if (!editingAssignment) return;
+    setSavingAssignment(true);
+    try {
+      const res = await fetch(`/api/licenses/assignments/${editingAssignment}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          renewalPeriod: assignmentForm.renewalPeriod || null,
+          priceOverride: assignmentForm.priceOverride || null,
+          supportHours: assignmentForm.supportHours || "0",
+          trainingSessions: assignmentForm.trainingSessions || "0",
+        }),
+      });
+      if (res.ok) {
+        toast.success("Asignación actualizada correctamente");
+        setEditingAssignment(null);
+        if (templateLicense) {
+          const updated = await fetch(`/api/licenses`).then((r) => r.json()).then((all: License[]) => all.find((l) => l.id === templateLicense.id));
+          if (updated) {
+            setTemplateLicense(updated);
+            setExistingAssignments(buildExistingMap(updated));
+          }
+        }
+        loadLicenses();
+      } else {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || "Error al actualizar");
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error desconocido";
+      toast.error(`Error de conexión: ${msg}`);
+    } finally {
+      setSavingAssignment(false);
+    }
+  }
+
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -462,7 +545,15 @@ export default function LicensesPage() {
         !l.assignments.some((a) => a.company.name.toLowerCase().includes(q))
       ) return false;
     }
-    if (statusFilter && l.status !== statusFilter) return false;
+    if (statusFilter) {
+      const computedStatus = (() => {
+        if (l.status === "CANCELLED") return "CANCELLED";
+        if (l.status === "SUSPENDED") return "SUSPENDED";
+        if (l.endDate && new Date(l.endDate) < new Date()) return "EXPIRED";
+        return "ACTIVE";
+      })();
+      if (computedStatus !== statusFilter) return false;
+    }
     if (typeFilter && l.licenseType !== typeFilter) return false;
     return true;
   }), [licenses, search, statusFilter, typeFilter]);
@@ -474,9 +565,9 @@ export default function LicensesPage() {
       0
     );
     const expiringSoon = licenses.filter(
-      (l) => l.status === "ACTIVE" && daysRemaining(l.endDate) <= 30 && daysRemaining(l.endDate) > 0
+      (l) => l.status !== "CANCELLED" && l.status !== "EXPIRED" && daysRemaining(l.endDate) <= 30 && daysRemaining(l.endDate) > 0
     ).length;
-    const expired = licenses.filter((l) => l.status === "EXPIRED").length;
+    const expired = licenses.filter((l) => l.status === "CANCELLED" || (l.endDate && new Date(l.endDate) < new Date())).length;
     const totalCost = licenses.reduce((sum, l) => sum + (Number(l.costUSD) || 0), 0);
     return { total, activeAssignments, expiringSoon, expired, totalCost };
   }, [licenses]);
@@ -499,7 +590,6 @@ export default function LicensesPage() {
     ? selectedCompanies.filter((id) => !existingAssignments[String(id)]).length +
       Object.entries(selectedBranches).reduce((acc, [companyIdStr, branchIds]) => {
         const companyId = Number(companyIdStr);
-        if (existingAssignments[String(companyId)]) return acc;
         return acc + branchIds.filter((bid) => !existingAssignments[`${companyId}:${bid}`]).length;
       }, 0)
     : 0;
@@ -721,7 +811,7 @@ export default function LicensesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={license.status} />
+                      <StatusBadge status={license.status} endDate={license.endDate} />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
@@ -839,7 +929,7 @@ export default function LicensesPage() {
                               <Badge variant="info" className="text-xs">
                                 {licenseTypeLabel[license.licenseType || "SUBSCRIPTION"] || license.licenseType}
                               </Badge>
-                              <StatusBadge status={license.status} />
+                      <StatusBadge status={license.status} endDate={license.endDate} />
                             </div>
                             <div className="mt-1 flex items-center gap-3 text-xs text-navy-400 dark:text-white/40">
                               <span className="flex items-center gap-1">
@@ -965,6 +1055,15 @@ export default function LicensesPage() {
                                         <option value="ACTIVE">Activa</option>
                                         <option value="CANCELLED">Inactiva</option>
                                       </Select>
+                                      <Button
+                                        variant={editingAssignment === assigned.assignmentId ? "default" : "outline"}
+                                        size="sm"
+                                        className={`h-7 gap-1 text-xs ${editingAssignment === assigned.assignmentId ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`}
+                                        onClick={() => editingAssignment === assigned.assignmentId ? setEditingAssignment(null) : startEditAssignment(assigned)}
+                                      >
+                                        <Pencil className="h-3 w-3" />
+                                        {editingAssignment === assigned.assignmentId ? "Cerrar" : "Editar"}
+                                      </Button>
                                     </>
                                   )}
                                   {assigned && (
@@ -992,6 +1091,72 @@ export default function LicensesPage() {
                                 </div>
                               </div>
 
+                              {assigned && editingAssignment === assigned.assignmentId && !isMarkedForUnassign && (
+                                <div className="border-t border-blue-100 bg-blue-50/50 px-4 py-3 dark:border-blue-500/10 dark:bg-blue-500/5">
+                                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-3">Detalles de la asignación</p>
+                                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                    <div>
+                                      <label className="block text-xs text-navy-500 dark:text-white/50 mb-1">Período Renovación</label>
+                                      <Select
+                                        value={assignmentForm.renewalPeriod}
+                                        onChange={(e) => setAssignmentForm({ ...assignmentForm, renewalPeriod: e.target.value })}
+                                        className="h-8 text-xs"
+                                      >
+                                        <option value="">Predeterminado</option>
+                                        <option value="MONTHLY">Mensual</option>
+                                        <option value="BIMONTHLY">Bimestral</option>
+                                        <option value="QUARTERLY">Trimestral</option>
+                                        <option value="SEMI_ANNUAL">Semestral</option>
+                                        <option value="ANNUAL">Anual</option>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-navy-500 dark:text-white/50 mb-1">Precio ($)</label>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={assignmentForm.priceOverride}
+                                        onChange={(e) => setAssignmentForm({ ...assignmentForm, priceOverride: e.target.value })}
+                                        className="h-8 text-xs"
+                                        placeholder="Predeterminado"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-navy-500 dark:text-white/50 mb-1">Horas Soporte</label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={assignmentForm.supportHours}
+                                        onChange={(e) => setAssignmentForm({ ...assignmentForm, supportHours: e.target.value })}
+                                        className="h-8 text-xs"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-navy-500 dark:text-white/50 mb-1">Capacitaciones</label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={assignmentForm.trainingSessions}
+                                        onChange={(e) => setAssignmentForm({ ...assignmentForm, trainingSessions: e.target.value })}
+                                        className="h-8 text-xs"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 flex justify-end">
+                                    <Button
+                                      size="sm"
+                                      onClick={handleSaveAssignment}
+                                      disabled={savingAssignment}
+                                      className="h-7 gap-1 text-xs"
+                                    >
+                                      {savingAssignment ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                                      Guardar
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
                               {isExpanded && hasBranches && (
                                 <div className="border-t border-navy-100 bg-navy-50/50 px-4 py-2 dark:border-white/[0.06] dark:bg-white/[0.02]">
                                   {company.branches!.map((branch) => {
@@ -1002,14 +1167,14 @@ export default function LicensesPage() {
 
                                     if (branchAssigned) {
                                       return (
-                                        <div
-                                          key={branch.id}
-                                          className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
-                                            branchMarkedForUnassign
-                                              ? "bg-red-50/30 dark:bg-red-500/5"
-                                              : "bg-emerald-50/30 dark:bg-emerald-500/5"
-                                          }`}
-                                        >
+                                        <div key={branch.id}>
+                                          <div
+                                            className={`flex items-center gap-3 px-4 py-2 rounded-lg ${
+                                              branchMarkedForUnassign
+                                                ? "bg-red-50/30 dark:bg-red-500/5"
+                                                : "bg-emerald-50/30 dark:bg-emerald-500/5"
+                                            }`}
+                                          >
                                           {branchMarkedForUnassign ? (
                                             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20">
                                               <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
@@ -1028,25 +1193,35 @@ export default function LicensesPage() {
                                           )}
                                           <div className="ml-auto flex items-center gap-2">
                                             {!branchMarkedForUnassign && (
-                                              <Select
-                                                value={branchAssigned.status}
-                                                onChange={(e) => {
-                                                  const newStatus = e.target.value;
-                                                  if (newStatus !== branchAssigned.status) {
-                                                    setStatusChangeTarget({
-                                                      assignmentId: branchAssigned.assignmentId,
-                                                      licenseId: templateLicense!.id,
-                                                      entityName: `${company.name} → ${branch.name}`,
-                                                      currentStatus: branchAssigned.status,
-                                                      newStatus,
-                                                    });
-                                                  }
-                                                }}
-                                                className="h-6 w-28 text-xs"
-                                              >
-                                                <option value="ACTIVE">Activa</option>
-                                                <option value="CANCELLED">Inactiva</option>
-                                              </Select>
+                                              <>
+                                                <Select
+                                                  value={branchAssigned.status}
+                                                  onChange={(e) => {
+                                                    const newStatus = e.target.value;
+                                                    if (newStatus !== branchAssigned.status) {
+                                                      setStatusChangeTarget({
+                                                        assignmentId: branchAssigned.assignmentId,
+                                                        licenseId: templateLicense!.id,
+                                                        entityName: `${company.name} → ${branch.name}`,
+                                                        currentStatus: branchAssigned.status,
+                                                        newStatus,
+                                                      });
+                                                    }
+                                                  }}
+                                                  className="h-6 w-28 text-xs"
+                                                >
+                                                  <option value="ACTIVE">Activa</option>
+                                                  <option value="CANCELLED">Inactiva</option>
+                                                </Select>
+                                                <Button
+                                                  variant={editingAssignment === branchAssigned.assignmentId ? "default" : "outline"}
+                                                  size="sm"
+                                                  className={`h-6 gap-1 text-xs ${editingAssignment === branchAssigned.assignmentId ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`}
+                                                  onClick={() => editingAssignment === branchAssigned.assignmentId ? setEditingAssignment(null) : startEditAssignment(branchAssigned)}
+                                                >
+                                                  <Pencil className="h-3 w-3" />
+                                                </Button>
+                                              </>
                                             )}
                                             <Button
                                               variant={branchMarkedForUnassign ? "default" : "outline"}
@@ -1055,10 +1230,75 @@ export default function LicensesPage() {
                                               onClick={() => toggleUnassign(branchKey)}
                                             >
                                               {branchMarkedForUnassign ? "Cancelar" : "Desasignar"}
-                                            </Button>
+                                              </Button>
+                                            </div>
                                           </div>
-                                        </div>
-                                      );
+                                          {branchAssigned && editingAssignment === branchAssigned.assignmentId && !branchMarkedForUnassign && (
+                                          <div className="ml-8 mt-2 rounded-lg border border-blue-100 bg-blue-50/50 px-3 py-2 dark:border-blue-500/10 dark:bg-blue-500/5">
+                                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                              <div>
+                                                <label className="block text-[10px] text-navy-500 dark:text-white/50 mb-0.5">Renovación</label>
+                                                <Select
+                                                  value={assignmentForm.renewalPeriod}
+                                                  onChange={(e) => setAssignmentForm({ ...assignmentForm, renewalPeriod: e.target.value })}
+                                                  className="h-7 text-xs"
+                                                >
+                                                  <option value="">Predeterminado</option>
+                                                  <option value="MONTHLY">Mensual</option>
+                                                  <option value="BIMONTHLY">Bimestral</option>
+                                                  <option value="QUARTERLY">Trimestral</option>
+                                                  <option value="SEMI_ANNUAL">Semestral</option>
+                                                  <option value="ANNUAL">Anual</option>
+                                                </Select>
+                                              </div>
+                                              <div>
+                                                <label className="block text-[10px] text-navy-500 dark:text-white/50 mb-0.5">Precio ($)</label>
+                                                <Input
+                                                  type="number"
+                                                  step="0.01"
+                                                  min="0"
+                                                  value={assignmentForm.priceOverride}
+                                                  onChange={(e) => setAssignmentForm({ ...assignmentForm, priceOverride: e.target.value })}
+                                                  className="h-7 text-xs"
+                                                  placeholder="Pred."
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-[10px] text-navy-500 dark:text-white/50 mb-0.5">Soporte (hrs)</label>
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  value={assignmentForm.supportHours}
+                                                  onChange={(e) => setAssignmentForm({ ...assignmentForm, supportHours: e.target.value })}
+                                                  className="h-7 text-xs"
+                                                />
+                                              </div>
+                                              <div>
+                                                <label className="block text-[10px] text-navy-500 dark:text-white/50 mb-0.5">Capacitaciones</label>
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  value={assignmentForm.trainingSessions}
+                                                  onChange={(e) => setAssignmentForm({ ...assignmentForm, trainingSessions: e.target.value })}
+                                                  className="h-7 text-xs"
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="mt-2 flex justify-end">
+                                              <Button
+                                                size="sm"
+                                                onClick={handleSaveAssignment}
+                                                disabled={savingAssignment}
+                                                className="h-6 gap-1 text-xs"
+                                              >
+                                                {savingAssignment ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                                                Guardar
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
                                     }
 
                                     return (

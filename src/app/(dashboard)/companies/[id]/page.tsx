@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page-header";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, getEffectiveEndDate } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Building2, ArrowLeft, Users, Package, KeyRound, CalendarCheck, Pencil, Plus } from "lucide-react";
+import { Building2, ArrowLeft, Users, Package, KeyRound, CalendarCheck, Pencil, Plus, DollarSign, Clock, GraduationCap, RefreshCw, Store } from "lucide-react";
 import { ECONOMIC_ACTIVITIES } from "@/data/economic-activities";
+import { LicensePaymentButton } from "@/components/license-payment-form";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -49,6 +50,14 @@ const visitTypeLabels: Record<string, string> = {
   TECHNICAL: "Técnica",
 };
 
+const renewalPeriodLabel: Record<string, string> = {
+  MONTHLY: "Mensual",
+  BIMONTHLY: "Bimestral",
+  QUARTERLY: "Trimestral",
+  SEMI_ANNUAL: "Semestral",
+  ANNUAL: "Anual",
+};
+
 export default async function CompanyDetailPage({ params }: PageProps) {
   const { id } = await params;
   const numericId = parseInt(id, 10);
@@ -64,10 +73,6 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         include: { product: { include: { category: true } } },
         orderBy: { createdAt: "desc" },
       },
-      licenseCompanies: {
-        include: { license: { include: { product: true } }, branch: true },
-        orderBy: { assignedAt: "desc" },
-      },
       visits: {
         include: {
           contact: { select: { id: true, name: true } },
@@ -76,11 +81,32 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         orderBy: { scheduledDate: "desc" },
         take: 20,
       },
-      _count: { select: { contacts: true, licenseCompanies: true, clientProducts: true, visits: true, supportCases: true } },
+      _count: { select: { contacts: true, clientProducts: true, visits: true, supportCases: true } },
     },
   });
 
   if (!company) notFound();
+
+  let licenseAssignments: any[] = [];
+  if (company.type === "MAIN") {
+    const direct = await prisma.licenseAssignment.findMany({
+      where: { companyId: numericId, branchId: null },
+      include: { license: { include: { product: true } }, company: true, branch: true },
+      orderBy: { assignedAt: "desc" },
+    });
+    const branchAssignments = await prisma.licenseAssignment.findMany({
+      where: { companyId: numericId, branchId: { not: null } },
+      include: { license: { include: { product: true } }, company: true, branch: true },
+      orderBy: { assignedAt: "desc" },
+    });
+    licenseAssignments = [...direct, ...branchAssignments];
+  } else {
+    licenseAssignments = await prisma.licenseAssignment.findMany({
+      where: { branchId: numericId },
+      include: { license: { include: { product: true } }, company: true, branch: true },
+      orderBy: { assignedAt: "desc" },
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -155,7 +181,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
               {[
                 { label: "Contactos", value: company._count.contacts, bg: "bg-blue-50", text: "text-blue-700", icon: Users },
                 { label: "Prod/Servicios", value: company._count.clientProducts, bg: "bg-emerald-50", text: "text-emerald-700", icon: Package },
-                { label: "Licencias", value: company._count.licenseCompanies, bg: "bg-cyan-50", text: "text-cyan-700", icon: KeyRound },
+                { label: "Licencias", value: licenseAssignments.length, bg: "bg-cyan-50", text: "text-cyan-700", icon: KeyRound },
                 { label: "Visitas", value: company._count.visits, bg: "bg-amber-50", text: "text-amber-700", icon: CalendarCheck },
               ].map(({ label, value, bg, text, icon: Icon }) => (
                 <div key={label} className={`rounded-xl ${bg} p-4 text-center transition-all duration-300 hover:scale-105`}>
@@ -218,23 +244,75 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             <TableCell><Badge variant={productStatusBadge[cp.status].variant}>{productStatusBadge[cp.status].label}</Badge></TableCell>
           </TableRow>
         ), emptyMsg: "No hay productos o servicios contratados" },
-        { title: "Licencias", count: company.licenseCompanies.length, items: company.licenseCompanies, cols: ["Producto", "Licencia", "Usuarios", "Inicio", "Vencimiento", "Estado"], render: (la: any) => (
+        { title: "Licencias", count: licenseAssignments.length, items: licenseAssignments, cols: company.type === "MAIN" ? ["Entidad", "Producto", "Renovación", "Precio", "Soporte", "Capacitaciones", "Vigencia", "Estado", ""] : ["Producto", "Renovación", "Precio", "Soporte", "Capacitaciones", "Vigencia", "Estado", ""], render: (la: any) => {
+          const renewal = la.renewalPeriod || la.license.renewalPeriod;
+          const price = la.priceOverride != null ? Number(la.priceOverride) : null;
+          const supportH = la.supportHours ?? 0;
+          const trainings = la.trainingSessions ?? 0;
+          const isBranch = la.branchId != null;
+          return (
           <TableRow key={la.id}>
+            {company.type === "MAIN" && (
+              <TableCell>
+                {isBranch ? (
+                  <div className="flex items-center gap-1.5">
+                    <Store className="h-3 w-3 text-sky-500" />
+                    <span className="text-sm text-navy-700">{la.branch?.name || "Sucursal"}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="h-3 w-3 text-blue-500" />
+                    <span className="text-sm font-medium text-navy-900">Directo</span>
+                  </div>
+                )}
+              </TableCell>
+            )}
             <TableCell className="font-medium text-navy-900">{la.license.product.name}</TableCell>
-            <TableCell className="font-mono text-xs text-navy-400">{la.license.licenseKey}</TableCell>
-            <TableCell className="text-navy-700">{la.license.maxUsers}</TableCell>
-            <TableCell className="text-sm text-navy-400">{formatDate(la.license.startDate)}</TableCell>
-            <TableCell className="text-sm text-navy-400">{formatDate(la.license.endDate)}</TableCell>
-            <TableCell><Badge variant={licenseStatusBadge[la.status]?.variant ?? "default"}>{licenseStatusBadge[la.status]?.label ?? la.status}</Badge></TableCell>
+            <TableCell>
+              <div className="flex items-center gap-1.5 text-sm text-navy-700">
+                <RefreshCw className="h-3 w-3 text-navy-300" />
+                {renewal ? (renewalPeriodLabel[renewal] || renewal) : "Sin período"}
+              </div>
+            </TableCell>
+            <TableCell>
+              {price != null ? (
+                <div className="flex items-center gap-1 text-sm font-medium text-navy-900">
+                  <DollarSign className="h-3 w-3 text-amber-500" />
+                  {formatCurrency(price)}
+                </div>
+              ) : (
+                <span className="text-sm text-navy-400">—</span>
+              )}
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-1 text-sm text-navy-700">
+                <Clock className="h-3 w-3 text-blue-400" />
+                {supportH > 0 ? `${supportH}h` : "—"}
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-1 text-sm text-navy-700">
+                <GraduationCap className="h-3 w-3 text-violet-400" />
+                {trainings > 0 ? `${trainings}` : "—"}
+              </div>
+            </TableCell>
+            <TableCell className="text-xs text-navy-400">{formatDate(la.license.startDate)} — {formatDate(getEffectiveEndDate(la.renewalEndDate, la.license.startDate, la.renewalPeriod || la.license.renewalPeriod))}</TableCell>
+            <TableCell><Badge variant={(() => { const end = getEffectiveEndDate(la.renewalEndDate, la.license.startDate, la.renewalPeriod || la.license.renewalPeriod); if (la.status === "CANCELLED") return "danger"; if (la.status === "SUSPENDED") return "warning"; if (new Date(end) < new Date()) return "danger"; return "success"; })()}>{(() => { const end = getEffectiveEndDate(la.renewalEndDate, la.license.startDate, la.renewalPeriod || la.license.renewalPeriod); if (la.status === "CANCELLED") return "Cancelada"; if (la.status === "SUSPENDED") return "Suspendida"; if (new Date(end) < new Date()) return "Vencida"; return "Activa"; })()}</Badge></TableCell>
+            <TableCell>
+              <LicensePaymentButton
+                assignment={{
+                  id: la.id,
+                  renewalPeriod: la.renewalPeriod || null,
+                  priceOverride: la.priceOverride != null ? Number(la.priceOverride) : null,
+                  company: { id: la.company.id, name: la.company.name },
+                  branch: la.branch ? { id: la.branch.id, name: la.branch.name } : null,
+                  license: { id: la.license.id, name: la.license.name, product: { name: la.license.product.name } },
+                }}
+              />
+            </TableCell>
           </TableRow>
-        ), emptyMsg: "No hay licencias asignadas", extra: (
-          <Link href="/licenses">
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" />
-              Asignar Licencia
-            </Button>
-          </Link>
-        ) },
+          );
+        }, emptyMsg: "No hay licencias asignadas" },
         { title: "Historial de Visitas", count: company._count.visits, items: company.visits, cols: ["Tipo", "Fecha Programada", "Contacto", "Asignado a", "Estado"], render: (v: any) => (
           <TableRow key={v.id}>
             <TableCell className="text-navy-500">{visitTypeLabels[v.type] || v.type}</TableCell>
@@ -248,7 +326,6 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         <Card key={section.title} className="animate-fade-in-up" style={{ animationDelay: `${(i + 3) * 50}ms` }}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{section.title} ({section.count})</CardTitle>
-            {section.extra}
           </CardHeader>
           <CardContent className="p-0">
             <Table>

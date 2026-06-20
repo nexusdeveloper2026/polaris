@@ -57,3 +57,22 @@ export function generateLicenseKey(): string {
   }
   return segments.join("-");
 }
+
+export function getEffectiveEndDate(
+  renewalEndDate: Date | string | null | undefined,
+  licenseStartDate: Date | string,
+  renewalPeriod: string | null | undefined
+): Date {
+  if (renewalEndDate) return new Date(renewalEndDate);
+  const start = new Date(licenseStartDate);
+  const end = new Date(start);
+  switch (renewalPeriod) {
+    case "MONTHLY": end.setMonth(end.getMonth() + 1); break;
+    case "BIMONTHLY": end.setMonth(end.getMonth() + 2); break;
+    case "QUARTERLY": end.setMonth(end.getMonth() + 3); break;
+    case "SEMI_ANNUAL": end.setMonth(end.getMonth() + 6); break;
+    case "ANNUAL": end.setFullYear(end.getFullYear() + 1); break;
+    default: end.setFullYear(end.getFullYear() + 1); break;
+  }
+  return end;
+}

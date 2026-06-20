@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, getEffectiveEndDate } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   Users, DollarSign, Clock, Shield, Zap, Code, Tag, RefreshCw,
   ShoppingCart, Truck, Wrench, GraduationCap, FileText, Copy
 } from "lucide-react";
+import { LicensePaymentButton } from "@/components/license-payment-form";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -100,8 +101,8 @@ export default async function LicenseDetailPage({ params }: PageProps) {
                 <Pencil className="mr-1.5 h-3.5 w-3.5" />Editar
               </Button>
             </Link>
-            <Badge variant={statusVariant[license.status] ?? "default"}>
-              {statusLabel[license.status] ?? license.status}
+            <Badge variant={(() => { if (license.status === "CANCELLED") return "danger"; if (license.status === "SUSPENDED") return "warning"; if (new Date(license.endDate) < new Date()) return "danger"; return "success"; })()}>
+              {(() => { if (license.status === "CANCELLED") return "Cancelada"; if (license.status === "SUSPENDED") return "Suspendida"; if (new Date(license.endDate) < new Date()) return "Vencida"; return "Activa"; })()}
             </Badge>
           </div>
         }
@@ -209,22 +210,58 @@ export default async function LicenseDetailPage({ params }: PageProps) {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-navy-700 dark:text-white/80">
-                          {assignment.company.name}
+                          {assignment.branch ? assignment.branch.name : assignment.company.name}
                         </span>
-                        <Badge variant={statusVariant[assignment.status] ?? "default"}>
-                          {statusLabel[assignment.status] ?? assignment.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={(() => { const end = getEffectiveEndDate(assignment.renewalEndDate, license.startDate, assignment.renewalPeriod || license.renewalPeriod); if (assignment.status === "CANCELLED") return "danger"; if (assignment.status === "SUSPENDED") return "warning"; if (new Date(end) < new Date()) return "danger"; return "success"; })()}>
+                            {(() => { const end = getEffectiveEndDate(assignment.renewalEndDate, license.startDate, assignment.renewalPeriod || license.renewalPeriod); if (assignment.status === "CANCELLED") return "Cancelada"; if (assignment.status === "SUSPENDED") return "Suspendida"; if (new Date(end) < new Date()) return "Vencida"; return "Activa"; })()}
+                          </Badge>
+                          <LicensePaymentButton
+                            assignment={{
+                              id: assignment.id,
+                              renewalPeriod: assignment.renewalPeriod || null,
+                              priceOverride: assignment.priceOverride != null ? Number(assignment.priceOverride) : null,
+                              company: { id: assignment.company.id, name: assignment.company.name },
+                              branch: assignment.branch ? { id: assignment.branch.id, name: assignment.branch.name } : null,
+                              license: { id: license.id, name: license.name, product: { name: license.product.name } },
+                            }}
+                          />
+                        </div>
                       </div>
                       {assignment.branch && (
                         <p className="mt-1 text-xs text-navy-400 dark:text-white/40">
-                          Sucursal: {assignment.branch.name}
+                          Empresa: {assignment.company.name}
                         </p>
                       )}
                       <div className="mt-2 flex items-center gap-3 text-xs text-navy-400 dark:text-white/40">
                         <span>{assignment.renewalPeriod ? (renewalPeriodLabel[assignment.renewalPeriod] || assignment.renewalPeriod) : "Sin período"}</span>
                         <span>·</span>
+                        <span>Vigencia: {formatDate(license.startDate)} — {formatDate(getEffectiveEndDate(assignment.renewalEndDate, license.startDate, assignment.renewalPeriod || license.renewalPeriod))}</span>
+                        <span>·</span>
                         <span>Asignado: {formatDate(assignment.assignedAt)}</span>
                       </div>
+                      {(assignment.priceOverride != null || (assignment.supportHours ?? 0) > 0 || (assignment.trainingSessions ?? 0) > 0) && (
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                          {assignment.priceOverride != null && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                              <DollarSign className="h-3 w-3" />
+                              {formatCurrency(Number(assignment.priceOverride))}
+                            </span>
+                          )}
+                          {(assignment.supportHours ?? 0) > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                              <Clock className="h-3 w-3" />
+                              {assignment.supportHours}h soporte
+                            </span>
+                          )}
+                          {(assignment.trainingSessions ?? 0) > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-violet-50 px-2 py-0.5 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400">
+                              <GraduationCap className="h-3 w-3" />
+                              {assignment.trainingSessions} capacitación(es)
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

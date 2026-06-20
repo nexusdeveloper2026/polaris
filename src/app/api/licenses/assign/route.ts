@@ -9,7 +9,13 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { licenseId: licenseIdRaw, assignments, renewalPeriod } = body as {
     licenseId: number;
-    assignments: { companyId: number; branchId?: number }[];
+    assignments: {
+      companyId: number;
+      branchId?: number;
+      priceOverride?: number | null;
+      supportHours?: number | null;
+      trainingSessions?: number | null;
+    }[];
     renewalPeriod?: string;
   };
 
@@ -50,6 +56,9 @@ export async function POST(request: NextRequest) {
         branchId: branchId || null,
         status: "ACTIVE",
         renewalPeriod: (renewalPeriod as never) || null,
+        priceOverride: assignment.priceOverride != null ? assignment.priceOverride : null,
+        supportHours: assignment.supportHours != null ? assignment.supportHours : 0,
+        trainingSessions: assignment.trainingSessions != null ? assignment.trainingSessions : 0,
       },
       include: {
         company: true,

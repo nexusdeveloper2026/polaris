@@ -150,7 +150,8 @@ input[type="date"]::-webkit-datetime-edit { color: inherit; }
 input[type="date"]::-webkit-datetime-edit-fields-wrapper { color: inherit; }
 input[type="date"]::-webkit-inner-spin-button,
 input[type="date"]::-webkit-clear-button { display: none; }
-::-webkit-calendar-picker-indicator { background: none; }
+::-webkit-calendar-picker-indicator { opacity: 0.6; cursor: pointer; filter: invert(0.3); }
+::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 input[type="date"]:invalid::-webkit-datetime-edit { color: transparent; }
 
 /* ===== DARK MODE GLOBAL OVERRIDES ===== */
