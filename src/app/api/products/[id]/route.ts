@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { calculateDailyPrice } from "@/lib/utils";
 
 export async function GET(
   _request: NextRequest,
@@ -9,7 +10,7 @@ export async function GET(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   const product = await prisma.product.findUnique({
     where: { id },
@@ -30,9 +31,9 @@ export async function PUT(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
   const body = await request.json();
-  const { name, description, categoryId, type, price, isActive } = body;
+  const { name, description, categoryId, type, price, cost, isActive, discountPercent, ivaPercent, paymentPeriod } = body;
 
   const existing = await prisma.product.findUnique({ where: { id } });
   if (!existing) {
@@ -44,10 +45,17 @@ export async function PUT(
     data: {
       ...(name !== undefined && { name }),
       ...(description !== undefined && { description }),
-      ...(categoryId !== undefined && { categoryId: categoryId || null }),
+      ...(categoryId !== undefined && { categoryId: categoryId ? parseInt(categoryId) : null }),
       ...(type !== undefined && { type }),
       ...(price !== undefined && { price: parseFloat(price) }),
+      ...(cost !== undefined && { cost: parseFloat(cost) || 0 }),
+      ...(discountPercent !== undefined && { discountPercent: parseFloat(discountPercent) || 0 }),
+      ...(ivaPercent !== undefined && { ivaPercent: parseFloat(ivaPercent) || 0 }),
       ...(isActive !== undefined && { isActive }),
+      ...(paymentPeriod !== undefined && {
+        paymentPeriod,
+        dailyPrice: calculateDailyPrice(parseFloat(String(price ?? existing.price)) || 0, paymentPeriod),
+      }),
     },
     include: { category: true },
   });
@@ -62,7 +70,7 @@ export async function DELETE(
   const session = await auth();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   const existing = await prisma.product.findUnique({ where: { id } });
   if (!existing) {

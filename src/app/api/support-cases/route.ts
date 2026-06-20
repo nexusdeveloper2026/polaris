@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (priority) where.priority = priority;
-    if (companyId) where.companyId = companyId;
-    if (assignedTo) where.assignedTo = assignedTo;
+    if (companyId) where.companyId = parseInt(companyId);
+    if (assignedTo) where.assignedTo = parseInt(assignedTo);
 
     const cases = await prisma.supportCase.findMany({
       where,
@@ -79,14 +79,14 @@ export async function POST(req: NextRequest) {
 
     const supportCase = await prisma.supportCase.create({
       data: {
-        companyId,
-        contactId: contactId || null,
+        companyId: parseInt(companyId),
+        contactId: contactId ? parseInt(contactId) : null,
         subject,
         description,
         priority: p,
         status: "OPEN",
         slaDeadline,
-        assignedTo: assignedTo || null,
+        assignedTo: assignedTo ? parseInt(assignedTo) : null,
       },
       include: {
         company: { select: { id: true, name: true } },

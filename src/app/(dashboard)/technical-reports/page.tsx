@@ -93,7 +93,7 @@ export default async function TechnicalReportsPage({
               </TableCell>
             </TableRow>
           ) : (
-            reports.map((r: { id: string; title: string; company: { id: string; name: string }; reportType: string; creator: { id: string; name: string | null }; createdAt: Date }) => (
+            reports.map((r: { id: number; title: string; company: { id: number; name: string }; reportType: string; creator: { id: number; name: string | null }; createdAt: Date }) => (
               <TableRow key={r.id}>
                 <TableCell className="font-medium text-navy-900">{r.title}</TableCell>
                 <TableCell className="text-navy-500">{r.company.name}</TableCell>

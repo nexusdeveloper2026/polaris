@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const reportType = searchParams.get("reportType");
 
     const where: Record<string, unknown> = {};
-    if (companyId) where.companyId = companyId;
+    if (companyId) where.companyId = parseInt(companyId);
     if (reportType) where.reportType = reportType;
 
     const reports = await prisma.technicalReport.findMany({
@@ -64,14 +64,14 @@ export async function POST(req: NextRequest) {
 
     const report = await prisma.technicalReport.create({
       data: {
-        visitId: visitId || null,
-        companyId,
+        visitId: visitId ? parseInt(visitId) : null,
+        companyId: parseInt(companyId),
         reportType,
         title,
         content,
         findings: findings || null,
         recommendations: recommendations || null,
-        createdBy: (session.user as any).id,
+        createdBy: parseInt(String((session.user as any).id)),
       },
       include: {
         company: { select: { id: true, name: true } },

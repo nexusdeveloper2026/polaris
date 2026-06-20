@@ -20,14 +20,14 @@ import { toast } from "sonner";
 import { ECONOMIC_ACTIVITIES } from "@/data/economic-activities";
 
 type Company = {
-  id: string;
+  id: number;
   name: string;
   taxIdType: string | null;
   taxId: string | null;
   type: "MAIN" | "BRANCH";
   isActive: boolean;
   createdAt: string;
-  parentId: string | null;
+  parentId: number | null;
   parent?: { name: string } | null;
   salesRep?: { name: string | null; email: string } | null;
   branches?: Company[];
@@ -41,7 +41,7 @@ const typeBadge = {
 
 function ActionsDropdown({ company, toggling, onToggle, onDelete }: {
   company: Company;
-  toggling: string | null;
+  toggling: number | null;
   onToggle: (c: Company) => void;
   onDelete: (c: Company) => void;
 }) {
@@ -97,12 +97,12 @@ export default function CompaniesPage() {
   const [dateTo, setDateTo] = useState("");
   const [salesRepFilter, setSalesRepFilter] = useState("");
   const [economicActivityFilter, setEconomicActivityFilter] = useState("");
-  const [salesReps, setSalesReps] = useState<{ id: string; name: string | null; email: string }[]>([]);
+  const [salesReps, setSalesReps] = useState<{ id: number; name: string | null; email: string }[]>([]);
   const [availableActivities, setAvailableActivities] = useState<string[]>([]);
-  const [toggling, setToggling] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadCompanies();
@@ -167,7 +167,7 @@ export default function CompaniesPage() {
     }
   }
 
-  function toggleExpand(id: string) {
+  function toggleExpand(id: number) {
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);

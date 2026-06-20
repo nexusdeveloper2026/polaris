@@ -19,8 +19,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const parsedCaseId = parseInt(caseId);
+
     const existing = await prisma.supportCase.findUnique({
-      where: { id: caseId },
+      where: { id: parsedCaseId },
       select: { id: true },
     });
 
@@ -31,10 +33,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userId = parseInt(String(session.user.id));
+
     const created = await prisma.supportCaseComment.create({
       data: {
-        caseId,
-        userId: session.user.id,
+        caseId: parsedCaseId,
+        userId,
         comment,
       },
       include: {

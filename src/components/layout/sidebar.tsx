@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Building2,
@@ -19,27 +20,130 @@ import {
   FileText,
   ClipboardList,
   ChevronsLeft,
+  Tags,
+  Settings,
+  ChevronDown,
 } from "lucide-react";
 import type { NavItem } from "@/types";
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={19} /> },
-  { title: "Empresas", href: "/companies", icon: <Building2 size={19} /> },
-  { title: "Productos", href: "/products", icon: <Package size={19} /> },
-  { title: "Licencias", href: "/licenses", icon: <KeyRound size={19} /> },
-  { title: "Visitas", href: "/visits", icon: <CalendarCheck size={19} /> },
   { title: "Soporte", href: "/support-cases", icon: <TicketCheck size={19} /> },
-  { title: "Traslados", href: "/transfers", icon: <Truck size={19} /> },
-  { title: "Usuarios", href: "/users", icon: <Users size={19} /> },
-  { title: "Perfiles", href: "/roles", icon: <Shield size={19} /> },
+  {
+    title: "Gestión Operativa",
+    href: "/gestion-operativa",
+    icon: <ClipboardList size={19} />,
+    children: [
+      { title: "Visitas", href: "/visits", icon: <CalendarCheck size={19} /> },
+      { title: "Traslados", href: "/transfers", icon: <Truck size={19} /> },
+      { title: "Informes Técnicos", href: "/technical-reports", icon: <FileText size={19} /> },
+      { title: "Fichas Implementación", href: "/implementation-sheets", icon: <ClipboardList size={19} /> },
+    ],
+  },
   { title: "Alertas", href: "/alerts", icon: <Bell size={19} /> },
-  { title: "Informes Técnicos", href: "/technical-reports", icon: <FileText size={19} /> },
-  { title: "Fichas Implementación", href: "/implementation-sheets", icon: <ClipboardList size={19} /> },
+  {
+    title: "Configuración",
+    href: "/configuracion",
+    icon: <Settings size={19} />,
+    children: [
+      { title: "Empresas", href: "/companies", icon: <Building2 size={19} /> },
+      { title: "Productos y Servicios", href: "/products", icon: <Package size={19} /> },
+      { title: "Categorías", href: "/product-categories", icon: <Tags size={19} /> },
+      { title: "Licencias", href: "/licenses", icon: <KeyRound size={19} /> },
+      { title: "Usuarios", href: "/users", icon: <Users size={19} /> },
+      { title: "Perfiles", href: "/roles", icon: <Shield size={19} /> },
+    ],
+  },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { collapsed, toggle } = useSidebar();
+  const [openGroups, setOpenGroups] = useState<string[]>(["/configuracion"]);
+
+  function toggleGroup(href: string) {
+    setOpenGroups((prev) =>
+      prev.includes(href) ? prev.filter((h) => h !== href) : [...prev, href]
+    );
+  }
+
+  function renderItem(item: NavItem) {
+    const isActive = pathname.startsWith(item.href);
+    const isGroup = !!item.children?.length;
+    const isGroupOpen = openGroups.includes(item.href);
+
+    if (isGroup) {
+      const hasActiveChild = item.children?.some((child) => pathname.startsWith(child.href));
+      return (
+        <div key={item.href}>
+          <button
+            onClick={() => toggleGroup(item.href)}
+            title={collapsed ? item.title : undefined}
+            className={cn(
+              "group relative flex w-full items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300",
+              collapsed && "justify-center px-0",
+              hasActiveChild
+                ? "bg-gradient-to-r from-blue-500/20 to-blue-600/10 text-white shadow-lg shadow-blue-500/10"
+                : "text-white/45 hover:bg-white/[0.06] hover:text-white/80"
+            )}
+          >
+            {hasActiveChild && (
+              <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-blue-400 to-blue-500 shadow-[0_0_12px_rgba(74,144,217,0.4)]" />
+            )}
+            <span className={cn(
+              "relative z-10 transition-transform duration-300",
+              hasActiveChild ? "text-blue-400" : "text-white/40 group-hover:text-white/60"
+            )}>
+              {item.icon}
+            </span>
+            {!collapsed && (
+              <>
+                <span className="relative z-10 truncate flex-1 text-left">{item.title}</span>
+                <ChevronDown className={cn(
+                  "relative z-10 h-4 w-4 transition-transform duration-300",
+                  isGroupOpen && "rotate-180"
+                )} />
+              </>
+            )}
+          </button>
+          {isGroupOpen && !collapsed && (
+            <div className="mt-1 ml-4 space-y-1 border-l border-white/[0.06] pl-3">
+              {item.children!.map((child) => renderItem(child))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        title={collapsed ? item.title : undefined}
+        className={cn(
+          "group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300",
+          collapsed && "justify-center px-0",
+          isActive
+            ? "bg-gradient-to-r from-blue-500/20 to-blue-600/10 text-white shadow-lg shadow-blue-500/10"
+            : "text-white/45 hover:bg-white/[0.06] hover:text-white/80"
+        )}
+      >
+        {isActive && (
+          <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-blue-400 to-blue-500 shadow-[0_0_12px_rgba(74,144,217,0.4)]" />
+        )}
+        <span className={cn(
+          "relative z-10 transition-transform duration-300",
+          isActive ? "text-blue-400" : "text-white/40 group-hover:text-white/60",
+          !isActive && "group-hover:scale-110"
+        )}>
+          {item.icon}
+        </span>
+        {!collapsed && (
+          <span className="relative z-10 truncate">{item.title}</span>
+        )}
+      </Link>
+    );
+  }
 
   return (
     <aside
@@ -75,37 +179,7 @@ export function Sidebar() {
             Menú
           </p>
         )}
-        {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={collapsed ? item.title : undefined}
-              className={cn(
-                "group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300",
-                collapsed && "justify-center px-0",
-                isActive
-                  ? "bg-gradient-to-r from-blue-500/20 to-blue-600/10 text-white shadow-lg shadow-blue-500/10"
-                  : "text-white/45 hover:bg-white/[0.06] hover:text-white/80"
-              )}
-            >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full bg-gradient-to-b from-blue-400 to-blue-500 shadow-[0_0_12px_rgba(74,144,217,0.4)]" />
-              )}
-              <span className={cn(
-                "relative z-10 transition-transform duration-300",
-                isActive ? "text-blue-400" : "text-white/40 group-hover:text-white/60",
-                !isActive && "group-hover:scale-110"
-              )}>
-                {item.icon}
-              </span>
-              {!collapsed && (
-                <span className="relative z-10 truncate">{item.title}</span>
-              )}
-            </Link>
-          );
-        })}
+        {navItems.map((item) => renderItem(item))}
       </nav>
 
       {/* Collapse toggle */}

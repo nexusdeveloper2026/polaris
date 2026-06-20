@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { calculateDailyPrice } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
   const categoryId = searchParams.get("categoryId");
 
   const products = await prisma.product.findMany({
-    where: categoryId ? { categoryId } : undefined,
+    where: categoryId ? { categoryId: parseInt(categoryId) } : undefined,
     include: { category: true },
     orderBy: { createdAt: "desc" },
   });
@@ -23,19 +24,30 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await request.json();
-  const { name, description, categoryId, type, price } = body;
+  const { name, description, categoryId, type, price, cost, discountPercent, ivaPercent, paymentPeriod } = body;
 
   if (!name || !type || price === undefined) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
   }
 
+  const priceNum = parseFloat(price) || 0;
+  const costNum = parseFloat(cost) || 0;
+  const iva = parseFloat(ivaPercent) || 0;
+  const period = paymentPeriod || "ONE_TIME";
+  const dailyPrice = calculateDailyPrice(priceNum, period);
+
   const product = await prisma.product.create({
     data: {
       name,
       description,
-      categoryId: categoryId || null,
+      categoryId: categoryId ? parseInt(categoryId) : null,
       type,
-      price: parseFloat(price),
+      cost: costNum,
+      price: priceNum,
+      discountPercent: parseFloat(discountPercent) || 0,
+      ivaPercent: iva,
+      paymentPeriod: period,
+      dailyPrice,
     },
     include: { category: true },
   });

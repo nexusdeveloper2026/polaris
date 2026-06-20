@@ -44,7 +44,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = "md", h
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div className="fixed inset-0 bg-navy-950/60 backdrop-blur-md animate-fade-in dark:bg-black/70" />

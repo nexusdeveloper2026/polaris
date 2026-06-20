@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-export function CommentForm({ caseId }: { caseId: string }) {
+export function CommentForm({ caseId }: { caseId: number }) {
   const router = useRouter();
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);

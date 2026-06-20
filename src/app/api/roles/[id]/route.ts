@@ -11,7 +11,7 @@ export async function GET(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
   const role = await prisma.role.findUnique({
     where: { id },
     include: { _count: { select: { users: true } } },
@@ -33,7 +33,7 @@ export async function PUT(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   try {
     const existing = await prisma.role.findUnique({ where: { id } });
@@ -78,7 +78,7 @@ export async function DELETE(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   try {
     const existing = await prisma.role.findUnique({

@@ -9,10 +9,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    const userId = parseInt(String((session.user as any).id));
+
     const { searchParams } = new URL(req.url);
     const unreadOnly = searchParams.get("unreadOnly");
 
-    const where: Record<string, unknown> = { userId: (session.user as any).id };
+    const where: Record<string, unknown> = { userId };
     if (unreadOnly === "true") where.isRead = false;
 
     const alerts = await prisma.alert.findMany({
@@ -53,8 +55,8 @@ export async function POST(req: NextRequest) {
         title,
         message,
         relatedEntityType: relatedEntityType || null,
-        relatedEntityId: relatedEntityId || null,
-        userId: userId || (session.user as any).id,
+        relatedEntityId: relatedEntityId ? parseInt(relatedEntityId) : null,
+        userId: userId ? parseInt(userId) : parseInt(String((session.user as any).id)),
       },
     });
 
@@ -75,8 +77,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    const userId = parseInt(String((session.user as any).id));
     const body = await req.json();
-    const userId = (session.user as any).id;
 
     if (body.markAll) {
       await prisma.alert.updateMany({
@@ -93,8 +95,9 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    const alertId = parseInt(body.id);
     const alert = await prisma.alert.updateMany({
-      where: { id: body.id, userId },
+      where: { id: alertId, userId },
       data: { isRead: true },
     });
 

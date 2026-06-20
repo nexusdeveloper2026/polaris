@@ -13,7 +13,7 @@ import { ConfirmDialog } from "@/components/ui/modal";
 import { Shield, Plus, Pencil, Trash2, Users, Eye, Check } from "lucide-react";
 
 type Role = {
-  id: string;
+  id: number;
   name: string;
   description: string | null;
   permissions: Permissions | null;

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (salesRepId) {
-    where.salesRepId = salesRepId;
+    where.salesRepId = parseInt(salesRepId);
   }
 
   if (economicActivity) {
@@ -133,16 +133,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
     }
 
+    const parsedParentId = parentId !== undefined && parentId !== null ? parseInt(parentId) : null;
+    const parsedSalesRepId = salesRepId !== undefined && salesRepId !== null ? parseInt(salesRepId) : null;
+
     if (taxId) {
-      if (type === "BRANCH" && parentId) {
-        const parent = await prisma.company.findUnique({ where: { id: parentId } });
+      if (type === "BRANCH" && parsedParentId) {
+        const parent = await prisma.company.findUnique({ where: { id: parsedParentId } });
         if (!parent) {
           return NextResponse.json({ error: "Empresa principal no encontrada" }, { status: 400 });
         }
         const duplicate = await prisma.company.findFirst({
-          where: { taxId, id: { not: parentId }, type: "MAIN" },
+          where: { taxId, id: { not: parsedParentId }, type: "MAIN" },
         });
-        if (duplicate && duplicate.id !== parentId) {
+        if (duplicate && duplicate.id !== parsedParentId) {
           return NextResponse.json({ error: "El Nro. de Identificación ya existe en otra empresa principal" }, { status: 409 });
         }
       } else {
@@ -155,8 +158,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (type === "BRANCH" && parentId) {
-      const parent = await prisma.company.findUnique({ where: { id: parentId } });
+    if (type === "BRANCH" && parsedParentId) {
+      const parent = await prisma.company.findUnique({ where: { id: parsedParentId } });
       if (!parent || parent.type !== "MAIN") {
         return NextResponse.json({ error: "La empresa padre debe ser de tipo MAIN" }, { status: 400 });
       }
@@ -176,9 +179,9 @@ export async function POST(request: NextRequest) {
         email: email?.trim() || null,
         website: website?.trim() || null,
         type: type || "MAIN",
-        parentId: parentId || null,
+        parentId: parsedParentId,
         notes: notes?.trim() || null,
-        salesRepId: salesRepId || null,
+        salesRepId: parsedSalesRepId,
         economicActivity: economicActivity?.trim() || null,
       },
     });

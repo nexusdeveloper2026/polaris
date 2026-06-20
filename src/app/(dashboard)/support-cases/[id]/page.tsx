@@ -56,7 +56,7 @@ const nextStatus: Record<string, string[]> = {
   CLOSED: [],
 };
 
-async function getCase(id: string) {
+async function getCase(id: number) {
   return prisma.supportCase.findUnique({
     where: { id },
     include: {
@@ -82,7 +82,8 @@ export default async function SupportCaseDetailPage({
   if (!session?.user) redirect("/login");
 
   const { id } = await params;
-  const c = await getCase(id);
+  const numericId = parseInt(id, 10);
+  const c = await getCase(numericId);
 
   if (!c) notFound();
 
@@ -98,7 +99,7 @@ export default async function SupportCaseDetailPage({
     }
 
     await prisma.supportCase.update({
-      where: { id },
+      where: { id: numericId },
       data,
     });
     redirect(`/support-cases/${id}`);
@@ -184,7 +185,7 @@ export default async function SupportCaseDetailPage({
           {c.comments.length === 0 ? (
             <p className="text-sm text-gray-500">Sin comentarios</p>
           ) : (
-            c.comments.map((comment: { id: string; comment: string; createdAt: Date; user: { id: string; name: string | null; email: string } }) => (
+            c.comments.map((comment: { id: number; comment: string; createdAt: Date; user: { id: number; name: string | null; email: string } }) => (
               <div
                 key={comment.id}
                 className="rounded-lg border border-gray-100 bg-gray-50 p-4"

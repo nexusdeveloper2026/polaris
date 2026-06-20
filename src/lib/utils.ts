@@ -13,9 +13,9 @@ export function formatDate(date: Date | string): string {
 
 export function formatCurrency(amount: number | string | { toNumber: () => number }): string {
   const value = typeof amount === "object" && "toNumber" in amount ? amount.toNumber() : Number(amount);
-  return new Intl.NumberFormat("es-DO", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "DOP",
+    currency: "USD",
   }).format(value);
 }
 
@@ -26,6 +26,23 @@ export function getSlaStatus(deadline: Date | null | undefined): string {
   if (diff < 0) return "vencido";
   if (diff < 3600000 * 4) return "por_vencer";
   return "dentro_plazo";
+}
+
+export const PERIOD_DAYS: Record<string, number> = {
+  ONE_TIME: 0,
+  DAILY: 1,
+  WEEKLY: 7,
+  MONTHLY: 30,
+  BIMONTHLY: 60,
+  QUARTERLY: 90,
+  SEMI_ANNUAL: 180,
+  ANNUAL: 365,
+  OTHER: 30,
+};
+
+export function calculateDailyPrice(price: number, paymentPeriod: string): number {
+  const days = PERIOD_DAYS[paymentPeriod] || 30;
+  return days > 0 ? price / days : 0;
 }
 
 export function generateLicenseKey(): string {

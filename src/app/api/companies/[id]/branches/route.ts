@@ -11,7 +11,7 @@ export async function GET(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   const company = await prisma.company.findUnique({
     where: { id },

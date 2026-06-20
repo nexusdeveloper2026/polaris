@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const companyId = searchParams.get("companyId");
 
     const where: Record<string, unknown> = {};
-    if (companyId) where.companyId = companyId;
+    if (companyId) where.companyId = parseInt(companyId);
 
     const sheets = await prisma.implementationSheet.findMany({
       where,
@@ -53,12 +53,12 @@ export async function POST(req: NextRequest) {
 
     const sheet = await prisma.implementationSheet.create({
       data: {
-        companyId,
+        companyId: parseInt(companyId),
         financialData,
         products,
         contractTerms: contractTerms || undefined,
         notes: notes || null,
-        createdBy: (session.user as any).id,
+        createdBy: parseInt(String((session.user as any).id)),
       },
       include: {
         company: { select: { id: true, name: true } },

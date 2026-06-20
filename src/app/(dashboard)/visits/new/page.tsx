@@ -11,9 +11,9 @@ import { FieldIcon, FieldGroup } from "@/components/ui/field-group";
 import { ArrowLeft, Save, CalendarCheck, Building2, User, Tags, Clock, Users, FileText, Info } from "lucide-react";
 import { toast } from "sonner";
 
-type Company = { id: string; name: string };
-type Contact = { id: string; name: string };
-type User = { id: string; name: string | null; email: string };
+type Company = { id: number; name: string };
+type Contact = { id: number; name: string };
+type User = { id: number; name: string | null; email: string };
 
 const visitTypes = [
   { value: "DEMO", label: "Demo" },
@@ -31,7 +31,7 @@ export default function NewVisitPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [companyId, setCompanyId] = useState("");
+  const [companyId, setCompanyId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   const selectedCompany = companies.find((c) => c.id === companyId);
@@ -70,11 +70,11 @@ export default function NewVisitPage() {
 
     const form = new FormData(e.currentTarget);
     const body = {
-      companyId: form.get("companyId") as string,
-      contactId: (form.get("contactId") as string) || null,
+      companyId: Number(form.get("companyId") as string),
+      contactId: form.get("contactId") ? Number(form.get("contactId") as string) : null,
       type: form.get("type") as string,
       scheduledDate: form.get("scheduledDate") as string,
-      assignedTo: (form.get("assignedTo") as string) || null,
+      assignedTo: form.get("assignedTo") ? Number(form.get("assignedTo") as string) : null,
       notes: (form.get("notes") as string) || null,
     };
 
@@ -144,7 +144,7 @@ export default function NewVisitPage() {
                       Empresa <span className="text-red-500">*</span>
                     </FieldIcon>
                   </label>
-                  <Select name="companyId" required value={companyId} onChange={(e) => setCompanyId(e.target.value)}>
+                  <Select name="companyId" required value={companyId ?? ""} onChange={(e) => setCompanyId(e.target.value ? Number(e.target.value) : null)}>
                     <option value="">Seleccionar empresa</option>
                     {companies.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>

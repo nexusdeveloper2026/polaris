@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (type) where.type = type;
-    if (companyId) where.companyId = companyId;
-    if (assignedTo) where.assignedTo = assignedTo;
+    if (companyId) where.companyId = parseInt(companyId);
+    if (assignedTo) where.assignedTo = parseInt(assignedTo);
 
     const visits = await prisma.visit.findMany({
       where,
@@ -60,11 +60,11 @@ export async function POST(req: NextRequest) {
 
     const visit = await prisma.visit.create({
       data: {
-        companyId,
-        contactId: contactId || null,
+        companyId: parseInt(companyId),
+        contactId: contactId ? parseInt(contactId) : null,
         type,
         scheduledDate: new Date(scheduledDate),
-        assignedTo: assignedTo || null,
+        assignedTo: assignedTo ? parseInt(assignedTo) : null,
         notes: notes || null,
         status: "SCHEDULED",
       },

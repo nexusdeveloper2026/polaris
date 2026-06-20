@@ -11,7 +11,7 @@ export async function GET(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   const company = await prisma.company.findUnique({
     where: { id },
@@ -24,8 +24,8 @@ export async function GET(
         orderBy: { createdAt: "desc" },
       },
       licenseCompanies: {
-        include: { product: true },
-        orderBy: { createdAt: "desc" },
+        include: { license: { include: { product: true } }, branch: true },
+        orderBy: { assignedAt: "desc" },
       },
       visits: {
         include: { contact: true, assignedUser: { select: { id: true, name: true } } },
@@ -59,7 +59,7 @@ export async function PUT(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   const existing = await prisma.company.findUnique({ where: { id } });
   if (!existing) {
@@ -74,10 +74,12 @@ export async function PUT(
       return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
     }
 
+    const parsedParentId = parentId !== undefined && parentId !== null ? parseInt(parentId) : undefined;
+
     if (taxId !== undefined) {
       const currentCompany = await prisma.company.findUnique({ where: { id } });
       if (type === "BRANCH" || currentCompany?.type === "BRANCH") {
-        const effectiveParentId = parentId || currentCompany?.parentId;
+        const effectiveParentId = parsedParentId !== undefined ? parsedParentId : currentCompany?.parentId;
         if (effectiveParentId && effectiveParentId !== id) {
           const duplicate = await prisma.company.findFirst({
             where: { taxId, type: "MAIN", id: { not: effectiveParentId } },
@@ -96,12 +98,14 @@ export async function PUT(
       }
     }
 
-    if (type === "BRANCH" && parentId) {
-      const parent = await prisma.company.findUnique({ where: { id: parentId } });
+    if (type === "BRANCH" && parsedParentId) {
+      const parent = await prisma.company.findUnique({ where: { id: parsedParentId } });
       if (!parent || parent.type !== "MAIN") {
         return NextResponse.json({ error: "La empresa padre debe ser de tipo MAIN" }, { status: 400 });
       }
     }
+
+    const parsedSalesRepId = salesRepId !== undefined && salesRepId !== null ? parseInt(salesRepId) : undefined;
 
     const company = await prisma.company.update({
       where: { id },
@@ -118,10 +122,10 @@ export async function PUT(
         ...(email !== undefined && { email: email?.trim() || null }),
         ...(website !== undefined && { website: website?.trim() || null }),
         ...(type !== undefined && { type }),
-        ...(parentId !== undefined && { parentId: parentId || null }),
+        ...(parsedParentId !== undefined && { parentId: parsedParentId || null }),
         ...(notes !== undefined && { notes: notes?.trim() || null }),
         ...(isActive !== undefined && { isActive }),
-        ...(salesRepId !== undefined && { salesRepId: salesRepId || null }),
+        ...(parsedSalesRepId !== undefined && { salesRepId: parsedSalesRepId || null }),
         ...(economicActivity !== undefined && { economicActivity: economicActivity?.trim() || null }),
       },
     });
@@ -158,7 +162,7 @@ export async function DELETE(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const id = parseInt((await params).id);
 
   const existing = await prisma.company.findUnique({
     where: { id },

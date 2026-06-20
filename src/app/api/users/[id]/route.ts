@@ -13,7 +13,7 @@ export async function GET(
   }
 
   try {
-    const { id } = await params;
+    const id = parseInt((await params).id);
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -22,6 +22,11 @@ export async function GET(
         email: true,
         isActive: true,
         hasCommissions: true,
+        docType: true,
+        docNumber: true,
+        position: true,
+        state: true,
+        fullAddress: true,
         roleId: true,
         createdAt: true,
         updatedAt: true,
@@ -50,9 +55,9 @@ export async function PUT(
   }
 
   try {
-    const { id } = await params;
+    const id = parseInt((await params).id);
     const body = await request.json();
-    const { name, email, password, roleId, isActive, hasCommissions } = body;
+    const { name, email, password, roleId, isActive, hasCommissions, docType, docNumber, position, state, fullAddress } = body;
 
     const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing) {
@@ -69,9 +74,14 @@ export async function PUT(
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email;
-    if (roleId !== undefined) data.roleId = roleId || null;
+    if (roleId !== undefined) data.roleId = roleId ? parseInt(roleId) : null;
     if (isActive !== undefined) data.isActive = isActive;
     if (hasCommissions !== undefined) data.hasCommissions = hasCommissions;
+    if (docType !== undefined) data.docType = docType?.trim() || null;
+    if (docNumber !== undefined) data.docNumber = docNumber?.trim() || null;
+    if (position !== undefined) data.position = position?.trim() || null;
+    if (state !== undefined) data.state = state?.trim() || null;
+    if (fullAddress !== undefined) data.fullAddress = fullAddress?.trim() || null;
     if (password) data.password = await hash(password, 10);
 
     const user = await prisma.user.update({
@@ -83,6 +93,11 @@ export async function PUT(
         email: true,
         isActive: true,
         hasCommissions: true,
+        docType: true,
+        docNumber: true,
+        position: true,
+        state: true,
+        fullAddress: true,
         roleId: true,
         createdAt: true,
         updatedAt: true,
@@ -107,9 +122,10 @@ export async function DELETE(
   }
 
   try {
-    const { id } = await params;
+    const id = parseInt((await params).id);
+    const sessionUserId = parseInt(String((session.user as any).id));
 
-    if (id === session.user.id) {
+    if (id === sessionUserId) {
       return NextResponse.json(
         { error: "No puedes eliminar tu propio usuario" },
         { status: 409 }

@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Building2, ArrowLeft, Users, Package, KeyRound, CalendarCheck, Pencil } from "lucide-react";
+import { Building2, ArrowLeft, Users, Package, KeyRound, CalendarCheck, Pencil, Plus } from "lucide-react";
 import { ECONOMIC_ACTIVITIES } from "@/data/economic-activities";
 
 interface PageProps {
@@ -51,9 +51,10 @@ const visitTypeLabels: Record<string, string> = {
 
 export default async function CompanyDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const numericId = parseInt(id, 10);
 
   const company = await prisma.company.findUnique({
-    where: { id },
+    where: { id: numericId },
     include: {
       parent: { select: { id: true, name: true } },
       salesRep: { select: { id: true, name: true, email: true } },
@@ -64,8 +65,8 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         orderBy: { createdAt: "desc" },
       },
       licenseCompanies: {
-        include: { product: true },
-        orderBy: { createdAt: "desc" },
+        include: { license: { include: { product: true } }, branch: true },
+        orderBy: { assignedAt: "desc" },
       },
       visits: {
         include: {
@@ -217,16 +218,23 @@ export default async function CompanyDetailPage({ params }: PageProps) {
             <TableCell><Badge variant={productStatusBadge[cp.status].variant}>{productStatusBadge[cp.status].label}</Badge></TableCell>
           </TableRow>
         ), emptyMsg: "No hay productos o servicios contratados" },
-        { title: "Licencias", count: company.licenseCompanies.length, items: company.licenseCompanies, cols: ["Producto", "Licencia", "Usuarios", "Inicio", "Vencimiento", "Estado"], render: (l: any) => (
-          <TableRow key={l.id}>
-            <TableCell className="font-medium text-navy-900">{l.product.name}</TableCell>
-            <TableCell className="font-mono text-xs text-navy-400">{l.licenseKey}</TableCell>
-            <TableCell className="text-navy-700">{l.maxUsers}</TableCell>
-            <TableCell className="text-sm text-navy-400">{formatDate(l.startDate)}</TableCell>
-            <TableCell className="text-sm text-navy-400">{formatDate(l.endDate)}</TableCell>
-            <TableCell><Badge variant={licenseStatusBadge[l.status].variant}>{licenseStatusBadge[l.status].label}</Badge></TableCell>
+        { title: "Licencias", count: company.licenseCompanies.length, items: company.licenseCompanies, cols: ["Producto", "Licencia", "Usuarios", "Inicio", "Vencimiento", "Estado"], render: (la: any) => (
+          <TableRow key={la.id}>
+            <TableCell className="font-medium text-navy-900">{la.license.product.name}</TableCell>
+            <TableCell className="font-mono text-xs text-navy-400">{la.license.licenseKey}</TableCell>
+            <TableCell className="text-navy-700">{la.license.maxUsers}</TableCell>
+            <TableCell className="text-sm text-navy-400">{formatDate(la.license.startDate)}</TableCell>
+            <TableCell className="text-sm text-navy-400">{formatDate(la.license.endDate)}</TableCell>
+            <TableCell><Badge variant={licenseStatusBadge[la.status]?.variant ?? "default"}>{licenseStatusBadge[la.status]?.label ?? la.status}</Badge></TableCell>
           </TableRow>
-        ), emptyMsg: "No hay licencias registradas" },
+        ), emptyMsg: "No hay licencias asignadas", extra: (
+          <Link href="/licenses">
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" />
+              Asignar Licencia
+            </Button>
+          </Link>
+        ) },
         { title: "Historial de Visitas", count: company._count.visits, items: company.visits, cols: ["Tipo", "Fecha Programada", "Contacto", "Asignado a", "Estado"], render: (v: any) => (
           <TableRow key={v.id}>
             <TableCell className="text-navy-500">{visitTypeLabels[v.type] || v.type}</TableCell>
@@ -240,6 +248,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         <Card key={section.title} className="animate-fade-in-up" style={{ animationDelay: `${(i + 3) * 50}ms` }}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{section.title} ({section.count})</CardTitle>
+            {section.extra}
           </CardHeader>
           <CardContent className="p-0">
             <Table>

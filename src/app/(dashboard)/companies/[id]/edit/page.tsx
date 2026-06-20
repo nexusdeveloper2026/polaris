@@ -12,13 +12,13 @@ import { Loader2, ArrowLeft, Save, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { ECONOMIC_ACTIVITIES } from "@/data/economic-activities";
 
-type MainCompany = { id: string; name: string };
-type User = { id: string; name: string | null; email: string; hasCommissions: boolean };
+type MainCompany = { id: number; name: string };
+type User = { id: number; name: string | null; email: string; hasCommissions: boolean };
 
 export default function EditCompanyPage() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  const id = Number(params.id);
 
   const [mainCompanies, setMainCompanies] = useState<MainCompany[]>([]);
   const [users, setUsers] = useState<User[]>([]);

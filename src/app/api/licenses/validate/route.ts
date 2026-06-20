@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   const license = await prisma.license.findUnique({
     where: { licenseKey },
-    include: { company: true, product: true },
+    include: { assignments: { include: { company: true, branch: true } }, product: true },
   });
 
   if (!license) {

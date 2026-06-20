@@ -5,6 +5,7 @@ export type NavItem = {
   href: string;
   icon: ReactNode;
   roles?: string[];
+  children?: NavItem[];
 };
 
 export type DashboardCard = {

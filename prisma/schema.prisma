@@ -34,6 +34,18 @@ enum ProductType {
   SERVICE
 }
 
+enum PaymentPeriod {
+  ONE_TIME
+  DAILY
+  WEEKLY
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+  OTHER
+}
+
 enum ClientProductStatus {
   ACTIVE
   EXPIRED
@@ -44,6 +56,26 @@ enum LicenseStatus {
   ACTIVE
   EXPIRED
   SUSPENDED
+  CANCELLED
+  PENDING
+}
+
+enum LicenseType {
+  PERPETUAL
+  SUBSCRIPTION
+  TRIAL
+  OEM
+  VOLUME
+  NAMED_USER
+  CONCURRENT
+}
+
+enum RenewalPeriod {
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
 }
 
 enum SupportPriority {
@@ -81,16 +113,21 @@ enum ImplSheetStatus {
 }
 
 model User {
-  id            String   @id @default(cuid())
+  id            Int      @id @default(autoincrement())
   name          String?
   email         String   @unique
   emailVerified DateTime?
   image         String?
   password      String?
-  roleId        String?
+  roleId        Int?
   role          Role?    @relation(fields: [roleId], references: [id])
   isActive      Boolean  @default(true)
   hasCommissions Boolean @default(false)
+  docType       String?
+  docNumber     String?
+  position      String?
+  state         String?
+  fullAddress   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -110,7 +147,7 @@ model User {
 }
 
 model Role {
-  id          String @id @default(cuid())
+  id          Int    @id @default(autoincrement())
   name        String @unique
   description String?
   permissions Json?
@@ -121,8 +158,8 @@ model Role {
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
+  id                Int     @id @default(autoincrement())
+  userId            Int
   type              String
   provider          String
   providerAccountId String
@@ -141,9 +178,9 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           Int      @id @default(autoincrement())
   sessionToken String   @unique
-  userId       String
+  userId       Int
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -160,9 +197,9 @@ model VerificationToken {
 }
 
 model Company {
-  id          String      @id @default(cuid())
+  id          Int       @id @default(autoincrement())
   name        String
-  taxIdType   String?     @default("V")
+  taxIdType   String?   @default("V")
   taxId       String?
   address     String?
   state       String?
@@ -173,12 +210,12 @@ model Company {
   email       String?
   website     String?
   type        CompanyType @default(MAIN)
-  parentId    String?
+  parentId    Int?
   parent      Company?    @relation("CompanyHierarchy", fields: [parentId], references: [id])
   branches    Company[]   @relation("CompanyHierarchy")
   notes       String?
   isActive    Boolean     @default(true)
-  salesRepId  String?
+  salesRepId  Int?
   salesRep    User?       @relation("CompanySalesRep", fields: [salesRepId], references: [id])
   economicActivity String?
   createdAt   DateTime    @default(now())
@@ -186,8 +223,8 @@ model Company {
 
   contacts         Contact[]
   clientProducts   ClientProduct[]
-  licenseCompanies License[]       @relation("LicenseCompany")
-  licenseBranches  License[]       @relation("LicenseBranch")
+  licenseCompanies LicenseAssignment[] @relation("LicenseCompany")
+  licenseBranches  LicenseAssignment[] @relation("LicenseBranch")
   visits           Visit[]
   supportCases     SupportCase[]
   technicalReports TechnicalReport[]
@@ -197,17 +234,17 @@ model Company {
 }
 
 model Contact {
-  id         String  @id @default(cuid())
-  companyId  String
-  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name       String
-  position   String?
-  phone      String?
-  email      String?
-  isPrimary  Boolean @default(false)
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int     @id @default(autoincrement())
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  position  String?
+  phone     String?
+  email     String?
+  isPrimary Boolean @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   visits       Visit[]
   supportCases SupportCase[]
@@ -216,7 +253,7 @@ model Contact {
 }
 
 model ProductCategory {
-  id          String    @id @default(cuid())
+  id          Int       @id @default(autoincrement())
   name        String    @unique
   description String?
   isActive    Boolean   @default(true)
@@ -229,16 +266,21 @@ model ProductCategory {
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  name        String
-  description String?
-  categoryId  String?
-  category    ProductCategory? @relation(fields: [categoryId], references: [id])
-  type        ProductType   @default(PRODUCT)
-  price       Decimal       @db.Decimal(10, 2)
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id              Int           @id @default(autoincrement())
+  name            String
+  description     String?
+  categoryId      Int?
+  category        ProductCategory? @relation(fields: [categoryId], references: [id])
+  type            ProductType   @default(PRODUCT)
+  cost            Decimal       @db.Decimal(10, 2) @default(0)
+  price           Decimal       @db.Decimal(10, 2)
+  discountPercent Float         @default(0)
+  ivaPercent      Float         @default(0)
+  paymentPeriod   PaymentPeriod @default(ONE_TIME)
+  dailyPrice      Float         @default(0)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   clientProducts ClientProduct[]
   licenses       License[]
@@ -247,10 +289,10 @@ model Product {
 }
 
 model ClientProduct {
-  id        String             @id @default(cuid())
-  companyId String
+  id        Int                @id @default(autoincrement())
+  companyId Int
   company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  productId String
+  productId Int
   product   Product            @relation(fields: [productId], references: [id])
   quantity  Int                @default(1)
   price     Decimal            @db.Decimal(10, 2)
@@ -265,17 +307,13 @@ model ClientProduct {
 }
 
 model License {
-  id          String        @id @default(cuid())
-  companyId   String
-  company     Company       @relation("LicenseCompany", fields: [companyId], references: [id], onDelete: Cascade)
-  branchId    String?
-  branch      Company?      @relation("LicenseBranch", fields: [branchId], references: [id])
-  licenseKey  String        @unique
-  productId   String
-  product     Product       @relation(fields: [productId], references: [id])
+  id          Int         @id @default(autoincrement())
+  licenseKey  String      @unique
+  productId   Int
+  product     Product     @relation(fields: [productId], references: [id])
   startDate   DateTime
   endDate     DateTime
-  maxUsers    Int           @default(1)
+  maxUsers    Int         @default(1)
   status      LicenseStatus @default(ACTIVE)
 
   licenseId                String?   @unique
@@ -288,24 +326,56 @@ model License {
   additionalTechHourValue  Decimal?  @db.Decimal(10, 2)
   additionalTrainingPerPerson Decimal? @db.Decimal(10, 2)
 
+  licenseType              LicenseType? @default(SUBSCRIPTION)
+  version                  String?
+  edition                  String?
+  maxActivations           Int?      @default(1)
+  usedActivations          Int?      @default(0)
+  autoRenew                Boolean   @default(false)
+  renewalDate              DateTime?
+  renewalPeriod            RenewalPeriod?
+  lastActivatedAt          DateTime?
+  lastUsedAt               DateTime?
+  purchaseDate             DateTime?
+  vendor                   String?
+  purchaseOrderNumber      String?
   notes       String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  assignments LicenseAssignment[]
+
   @@map("licenses")
 }
 
+model LicenseAssignment {
+  id            Int         @id @default(autoincrement())
+  licenseId     Int
+  license       License     @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  companyId     Int
+  company       Company     @relation("LicenseCompany", fields: [companyId], references: [id], onDelete: Cascade)
+  branchId      Int?
+  branch        Company?    @relation("LicenseBranch", fields: [branchId], references: [id])
+  status        LicenseStatus @default(ACTIVE)
+  renewalPeriod RenewalPeriod?
+  assignedAt    DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([licenseId, companyId, branchId])
+  @@map("license_assignments")
+}
+
 model Visit {
-  id            String      @id @default(cuid())
-  companyId     String
+  id            Int         @id @default(autoincrement())
+  companyId     Int
   company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contactId     String?
+  contactId     Int?
   contact       Contact?    @relation(fields: [contactId], references: [id])
   type          VisitType
   scheduledDate DateTime
   completedDate DateTime?
   status        VisitStatus @default(SCHEDULED)
-  assignedTo    String?
+  assignedTo    Int?
   assignedUser  User?       @relation("AssignedUser", fields: [assignedTo], references: [id])
   notes         String?
   reportUrl     String?
@@ -318,17 +388,17 @@ model Visit {
 }
 
 model SupportCase {
-  id           String         @id @default(cuid())
-  companyId    String
+  id           Int            @id @default(autoincrement())
+  companyId    Int
   company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contactId    String?
+  contactId    Int?
   contact      Contact?       @relation(fields: [contactId], references: [id])
   subject      String
   description  String         @db.Text
   priority     SupportPriority @default(MEDIUM)
   status       SupportStatus  @default(OPEN)
   slaDeadline  DateTime?
-  assignedTo   String?
+  assignedTo   Int?
   assignedUser User?          @relation("AssignedSupportUser", fields: [assignedTo], references: [id])
   resolvedAt   DateTime?
   createdAt    DateTime       @default(now())
@@ -340,10 +410,10 @@ model SupportCase {
 }
 
 model SupportCaseComment {
-  id        String      @id @default(cuid())
-  caseId    String
+  id        Int         @id @default(autoincrement())
+  caseId    Int
   case      SupportCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  userId    String
+  userId    Int
   user      User        @relation(fields: [userId], references: [id])
   comment   String      @db.Text
   createdAt DateTime    @default(now())
@@ -352,32 +422,32 @@ model SupportCaseComment {
 }
 
 model Transfer {
-  id             String         @id @default(cuid())
-  userId         String
-  user           User           @relation("TransferUser", fields: [userId], references: [id])
-  fromLocation   String
-  toLocation     String
-  transferDate   DateTime
-  reason         String         @db.Text
-  approvedById   String?
-  approvedBy     User?          @relation("ApprovedTransfer", fields: [approvedById], references: [id])
-  status         TransferStatus @default(PENDING)
-  notes          String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id           Int          @id @default(autoincrement())
+  userId       Int
+  user         User         @relation("TransferUser", fields: [userId], references: [id])
+  fromLocation String
+  toLocation   String
+  transferDate DateTime
+  reason       String       @db.Text
+  approvedById Int?
+  approvedBy   User?        @relation("ApprovedTransfer", fields: [approvedById], references: [id])
+  status       TransferStatus @default(PENDING)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@map("transfers")
 }
 
 model Alert {
-  id                String   @id @default(cuid())
+  id                Int      @id @default(autoincrement())
   type              String
   title             String
   message           String   @db.Text
   relatedEntityType String?
-  relatedEntityId   String?
+  relatedEntityId   Int?
   isRead            Boolean  @default(false)
-  userId            String
+  userId            Int
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt         DateTime @default(now())
 
@@ -385,17 +455,17 @@ model Alert {
 }
 
 model TechnicalReport {
-  id            String     @id @default(cuid())
-  visitId       String?
+  id            Int        @id @default(autoincrement())
+  visitId       Int?
   visit         Visit?     @relation(fields: [visitId], references: [id])
-  companyId     String
+  companyId     Int
   company       Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   reportType    ReportType
   title         String
   content       String     @db.Text
   findings      String?    @db.Text
   recommendations String?  @db.Text
-  createdBy     String
+  createdBy     Int
   creator       User       @relation("ReportCreator", fields: [createdBy], references: [id])
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -404,18 +474,18 @@ model TechnicalReport {
 }
 
 model ImplementationSheet {
-  id            String          @id @default(cuid())
-  companyId     String
-  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id            Int           @id @default(autoincrement())
+  companyId     Int
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   financialData Json
   products      Json
   contractTerms Json?
   notes         String?
   status        ImplSheetStatus @default(DRAFT)
-  createdBy     String
-  creator       User            @relation(fields: [createdBy], references: [id])
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdBy     Int
+  creator       User          @relation(fields: [createdBy], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@map("implementation_sheets")
 }

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
   const transfer = await prisma.transfer.create({
     data: {
-      userId,
+      userId: parseInt(userId),
       fromLocation,
       toLocation,
       transferDate: new Date(transferDate),

@@ -79,7 +79,7 @@ export default async function ImplementationSheetsPage({
               </TableCell>
             </TableRow>
           ) : (
-            sheets.map((s: { id: string; company: { id: string; name: string }; creator: { id: string; name: string | null }; status: string; createdAt: Date }) => (
+            sheets.map((s: { id: number; company: { id: number; name: string }; creator: { id: number; name: string | null }; status: string; createdAt: Date }) => (
               <TableRow key={s.id}>
                 <TableCell className="font-medium text-navy-900">{s.company.name}</TableCell>
                 <TableCell className="text-navy-500">{s.creator.name || "—"}</TableCell>

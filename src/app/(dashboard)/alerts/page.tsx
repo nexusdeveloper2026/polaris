@@ -16,7 +16,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   ERROR: <XCircle className="h-5 w-5 text-red-500" />,
 };
 
-async function getAlerts(userId: string, searchParams: { unreadOnly?: string }) {
+async function getAlerts(userId: number, searchParams: { unreadOnly?: string }) {
   const where: Record<string, unknown> = { userId };
   if (searchParams.unreadOnly === "true") where.isRead = false;
   return prisma.alert.findMany({ where, orderBy: { createdAt: "desc" } });
@@ -31,7 +31,7 @@ export default async function AlertsPage({
   if (!session?.user) redirect("/login");
 
   const params = await searchParams;
-  const userId = (session.user as any).id;
+  const userId = Number((session.user as any).id);
   const alerts = await getAlerts(userId, params);
 
   const checkboxClass = "h-4 w-4 rounded border-navy-300 text-blue-600 focus:ring-blue-500";
@@ -67,7 +67,7 @@ export default async function AlertsPage({
         </Card>
       ) : (
         <div className="animate-fade-in-up animate-delay-1 space-y-3">
-          {alerts.map((alert: { id: string; type: string; title: string; message: string; isRead: boolean; createdAt: Date }) => (
+          {alerts.map((alert: { id: number; type: string; title: string; message: string; isRead: boolean; createdAt: Date }) => (
             <Card key={alert.id} className={`transition-all duration-300 hover:shadow-md ${alert.isRead ? "opacity-60" : ""}`}>
               <CardHeader className="flex flex-row items-start gap-3 pb-2">
                 <span className="mt-0.5">{typeIcons[alert.type] || <Bell className="h-5 w-5 text-navy-400" />}</span>

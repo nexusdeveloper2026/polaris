@@ -1,40 +1,89 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/modal";
 import { DateInput } from "@/components/ui/date-input";
 import {
-  ArrowLeft, Save, Building2, Package, CalendarDays, Users, FileText,
-  KeyRound, DollarSign, Clock, Gift, Percent, Wrench, GraduationCap, Info, Hash, Tag, Store,
-  Zap, Code, Layers, Shield, RefreshCw, ShoppingCart, Truck, Loader2
+  ArrowLeft, Save, Trash2, Loader2, KeyRound, Building2, Package,
+  CalendarDays, Users, FileText, Info, Copy, Check, Shield,
+  DollarSign, Clock, Gift, Percent, Wrench, GraduationCap, Hash, Tag, Store,
+  Zap, Code, Layers, RefreshCw, ShoppingCart, Truck
 } from "lucide-react";
 import { toast } from "sonner";
 
 type Product = { id: number; name: string };
 
-export default function NewLicensePage() {
-  return (
-    <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-navy-300" /></div>}>
-      <NewLicenseForm />
-    </Suspense>
-  );
-}
+type LicenseData = {
+  id: number;
+  productId: number;
+  licenseKey: string;
+  startDate: string;
+  endDate: string;
+  maxUsers: number;
+  status: string;
+  notes: string | null;
+  licenseId: string | null;
+  name: string | null;
+  costUSD: number | null;
+  supportHours: number;
+  freeDays: number;
+  discountPercent: number | null;
+  allowedTechnicalVisits: number;
+  additionalTechHourValue: number | null;
+  additionalTrainingPerPerson: number | null;
+  licenseType: string | null;
+  version: string | null;
+  edition: string | null;
+  maxActivations: number | null;
+  usedActivations: number | null;
+  autoRenew: boolean;
+  renewalDate: string | null;
+  renewalPeriod: string | null;
+  lastActivatedAt: string | null;
+  lastUsedAt: string | null;
+  purchaseDate: string | null;
+  vendor: string | null;
+  purchaseOrderNumber: string | null;
+  assignments: {
+    id: number;
+    companyId: number;
+    branchId: number | null;
+    status: string;
+    renewalPeriod: string | null;
+    company: { id: number; name: string };
+    branch: { id: number; name: string } | null;
+    assignedAt: string;
+  }[];
+  product: { id: number; name: string };
+};
 
-function NewLicenseForm() {
+const statusOptions = [
+  { value: "ACTIVE", label: "Activa", badge: "success" as const },
+  { value: "SUSPENDED", label: "Suspendida", badge: "warning" as const },
+  { value: "EXPIRED", label: "Expirada", badge: "danger" as const },
+  { value: "CANCELLED", label: "Cancelada", badge: "danger" as const },
+  { value: "PENDING", label: "Pendiente", badge: "info" as const },
+];
+
+export default function EditLicensePage() {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const params = useParams();
+  const id = params.id as string;
 
+  const [products, setProducts] = useState<Product[]>([]);
   const [productId, setProductId] = useState<number | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [maxUsers, setMaxUsers] = useState("1");
+  const [status, setStatus] = useState("ACTIVE");
+  const [licenseKey, setLicenseKey] = useState("");
   const [notes, setNotes] = useState("");
 
   const [licenseId, setLicenseId] = useState("");
@@ -52,6 +101,7 @@ function NewLicenseForm() {
   const [version, setVersion] = useState("");
   const [edition, setEdition] = useState("");
   const [maxActivations, setMaxActivations] = useState("1");
+  const [usedActivations, setUsedActivations] = useState("0");
   const [autoRenew, setAutoRenew] = useState(false);
   const [renewalDate, setRenewalDate] = useState("");
   const [renewalPeriod, setRenewalPeriod] = useState("");
@@ -59,72 +109,134 @@ function NewLicenseForm() {
   const [vendor, setVendor] = useState("");
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
 
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     async function load() {
-      const prodRes = await fetch("/api/products");
+      const [licenseRes, prodRes] = await Promise.all([
+        fetch(`/api/licenses/${id}`),
+        fetch("/api/products"),
+      ]);
+
+      if (licenseRes.ok) {
+        const lic: LicenseData = await licenseRes.json();
+        setProductId(lic.productId);
+        setStartDate(lic.startDate.slice(0, 10));
+        setEndDate(lic.endDate.slice(0, 10));
+        setMaxUsers(String(lic.maxUsers));
+        setStatus(lic.status);
+        setLicenseKey(lic.licenseKey);
+        setNotes(lic.notes || "");
+        setLicenseId(lic.licenseId || "");
+        setName(lic.name || "");
+        setCostUSD(lic.costUSD != null ? String(lic.costUSD) : "");
+        setSupportHours(String(lic.supportHours));
+        setFreeDays(String(lic.freeDays));
+        setDiscountPercent(lic.discountPercent != null ? String(lic.discountPercent) : "");
+        setAllowedTechnicalVisits(String(lic.allowedTechnicalVisits));
+        setAdditionalTechHourValue(lic.additionalTechHourValue != null ? String(lic.additionalTechHourValue) : "");
+        setAdditionalTrainingPerPerson(lic.additionalTrainingPerPerson != null ? String(lic.additionalTrainingPerPerson) : "");
+        // New fields
+        setLicenseType(lic.licenseType || "SUBSCRIPTION");
+        setVersion(lic.version || "");
+        setEdition(lic.edition || "");
+        setMaxActivations(String(lic.maxActivations || 1));
+        setUsedActivations(String(lic.usedActivations || 0));
+        setAutoRenew(lic.autoRenew || false);
+        setRenewalDate(lic.renewalDate ? lic.renewalDate.slice(0, 10) : "");
+        setRenewalPeriod(lic.renewalPeriod || "");
+        setPurchaseDate(lic.purchaseDate ? lic.purchaseDate.slice(0, 10) : "");
+        setVendor(lic.vendor || "");
+        setPurchaseOrderNumber(lic.purchaseOrderNumber || "");
+      } else {
+        router.push("/licenses");
+      }
+
       if (prodRes.ok) setProducts(await prodRes.json());
+
+      setFetching(false);
     }
     load();
-  }, []);
+  }, [id, router]);
 
   const selectedProduct = products.find((p) => p.id === productId);
+  const statusMeta = statusOptions.find((s) => s.value === status);
+  const total = costUSD && discountPercent
+    ? (parseFloat(costUSD) * (1 - parseFloat(discountPercent) / 100)).toFixed(2)
+    : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const missing: string[] = [];
-    if (!productId) missing.push("Producto");
-    if (!startDate) missing.push("Fecha de Inicio");
-    if (!endDate) missing.push("Fecha de Vencimiento");
-
-    if (missing.length > 0) {
-      setError(`Campos requeridos incompletos: ${missing.join(", ")}`);
-      setLoading(false);
-      return;
-    }
-
-    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
-      setError("La fecha de vencimiento no puede ser anterior a la fecha de inicio");
-      setLoading(false);
-      return;
-    }
-
-    const res = await fetch("/api/licenses", {
-      method: "POST",
+    const res = await fetch(`/api/licenses/${id}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productId, startDate, endDate, maxUsers, notes,
-        licenseId: licenseId || null,
-        name: name || null,
-        costUSD: costUSD || null,
-        supportHours,
-        freeDays,
-        discountPercent: discountPercent || null,
-        allowedTechnicalVisits,
-        additionalTechHourValue: additionalTechHourValue || null,
-        additionalTrainingPerPerson: additionalTrainingPerPerson || null,
-        licenseType, version: version || null, edition: edition || null,
-        maxActivations, autoRenew,
-        renewalDate: renewalDate || null,
-        renewalPeriod: renewalPeriod || null,
-        purchaseDate: purchaseDate || null,
-        vendor: vendor || null,
-        purchaseOrderNumber: purchaseOrderNumber || null,
-      }),
+        body: JSON.stringify({
+          productId, startDate, endDate, maxUsers, status, notes,
+          licenseId: licenseId || null,
+          name: name || null,
+          costUSD: costUSD || null,
+          supportHours,
+          freeDays,
+          discountPercent: discountPercent || null,
+          allowedTechnicalVisits,
+          additionalTechHourValue: additionalTechHourValue || null,
+          additionalTrainingPerPerson: additionalTrainingPerPerson || null,
+          licenseType, version: version || null, edition: edition || null,
+          maxActivations, usedActivations, autoRenew,
+          renewalDate: renewalDate || null,
+          renewalPeriod: renewalPeriod || null,
+          purchaseDate: purchaseDate || null,
+          vendor: vendor || null,
+          purchaseOrderNumber: purchaseOrderNumber || null,
+        }),
     });
 
     setLoading(false);
 
     if (res.ok) {
-      toast.success("Licencia creada correctamente");
-      router.push("/licenses");
+      toast.success("Licencia actualizada correctamente");
+      router.push(`/licenses/${id}`);
       router.refresh();
     } else {
       const data = await res.json();
-      setError(data.error || "Error al crear licencia");
+      setError(data.error || "Error al actualizar");
     }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    const res = await fetch(`/api/licenses/${id}`, { method: "DELETE" });
+    setDeleting(false);
+    setShowDelete(false);
+    if (res.ok) {
+      toast.success("Licencia eliminada correctamente");
+      router.push("/licenses");
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Error al eliminar");
+    }
+  }
+
+  function copyKey() {
+    navigator.clipboard.writeText(licenseKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (fetching) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-navy-300 dark:text-white/30" />
+      </div>
+    );
   }
 
   return (
@@ -135,10 +247,10 @@ function NewLicenseForm() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-navy-900 dark:text-white">
-            Nueva Licencia
+            Editar Licencia
           </h1>
           <p className="text-sm text-navy-400 dark:text-white/40">
-            Registra una nueva licencia con todos sus detalles
+            Modifica los datos de la licencia
           </p>
         </div>
       </div>
@@ -151,10 +263,29 @@ function NewLicenseForm() {
           </div>
         )}
 
+        {/* License Key Banner */}
+        <div className="animate-fade-in-up animate-delay-1 flex items-center gap-3 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-blue-50/50 px-5 py-3 shadow-sm dark:border-blue-500/20 dark:from-blue-500/10 dark:to-blue-500/5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-500/20">
+            <KeyRound className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wider text-blue-500">Clave de Licencia</p>
+            <code className="block truncate font-mono text-sm font-semibold text-navy-900 dark:text-white">{licenseKey}</code>
+          </div>
+          <button
+            type="button"
+            onClick={copyKey}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-navy-500 shadow-sm transition-all hover:bg-blue-50 hover:text-blue-600 dark:bg-white/10 dark:hover:bg-white/20"
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Copiado" : "Copiar"}
+          </button>
+        </div>
+
         <div className="grid gap-6 xl:grid-cols-3">
           <div className="xl:col-span-2 space-y-6">
             {/* Identificación */}
-            <Card className="animate-fade-in-up animate-delay-1 overflow-hidden">
+            <Card className="animate-fade-in-up animate-delay-2 overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-600" />
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -242,19 +373,24 @@ function NewLicenseForm() {
                     <Input value={version} onChange={(e) => setVersion(e.target.value)} placeholder="Ej: 3.2.1" />
                   </div>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-navy-700 dark:text-white/70">
                       <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-navy-400" />Máx. Activaciones</span>
                     </label>
-                    <Input type="number" min="1" value={maxActivations} onChange={(e) => setMaxActivations(e.target.value)} className="max-w-xs" />
-                    <p className="text-xs text-navy-400 dark:text-white/30">Número máximo de instalaciones/activaciones</p>
+                    <Input type="number" min="1" value={maxActivations} onChange={(e) => setMaxActivations(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-navy-700 dark:text-white/70">
+                      <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-navy-400" />Usadas</span>
+                    </label>
+                    <Input type="number" min="0" value={usedActivations} onChange={(e) => setUsedActivations(e.target.value)} />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-navy-700 dark:text-white/70">
                       <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-navy-400" />Máx. Usuarios</span>
                     </label>
-                    <Input type="number" min="1" value={maxUsers} onChange={(e) => setMaxUsers(e.target.value)} className="max-w-xs" />
+                    <Input type="number" min="1" value={maxUsers} onChange={(e) => setMaxUsers(e.target.value)} />
                   </div>
                 </div>
               </CardContent>
@@ -270,11 +406,26 @@ function NewLicenseForm() {
                   </div>
                   <div>
                     <CardTitle>Vigencia y Renovación</CardTitle>
-                    <p className="text-xs text-navy-300 mt-0.5">Período de validez y auto-renovación</p>
+                    <p className="text-xs text-navy-300 mt-0.5">Período de validez, estado y auto-renovación</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-5">
+                <div className="flex items-center gap-4 rounded-xl bg-navy-50 px-4 py-3 dark:bg-white/[0.03]">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-navy-400 dark:text-white/40" />
+                    <span className="text-sm font-medium text-navy-700 dark:text-white/70">Estado:</span>
+                  </div>
+                  <Badge variant={statusMeta?.badge ?? "default"}>
+                    {statusMeta?.label ?? status}
+                  </Badge>
+                  <Select value={status} onChange={(e) => setStatus(e.target.value)} className="ml-auto w-36">
+                    {statusOptions.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </Select>
+                </div>
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-navy-700 dark:text-white/70">
@@ -328,16 +479,9 @@ function NewLicenseForm() {
                     <option value="BIMONTHLY">Bimestral</option>
                     <option value="QUARTERLY">Trimestral</option>
                     <option value="SEMI_ANNUAL">Semestral</option>
-                    <option value="ANNUAL">Anual</option>
+                    <option value="ANUAL">Anual</option>
                   </Select>
                   <p className="text-xs text-navy-400 dark:text-white/30">Cada empresa puede definir su período de renovación</p>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-navy-700 dark:text-white/70">
-                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-navy-400" />Días Gratis</span>
-                  </label>
-                  <Input type="number" min="0" value={freeDays} onChange={(e) => setFreeDays(e.target.value)} className="max-w-xs" />
-                  <p className="text-xs text-navy-400 dark:text-white/30">Período de prueba o cortesía en días</p>
                 </div>
               </CardContent>
             </Card>
@@ -375,10 +519,10 @@ function NewLicenseForm() {
                       <Input type="number" step="0.01" min="0" max="100" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} placeholder="0" />
                       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-navy-400">%</span>
                     </div>
-                    {costUSD && discountPercent && (
+                    {total && (
                       <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                         <Percent className="h-3 w-3" />
-                        Total: ${(parseFloat(costUSD) * (1 - parseFloat(discountPercent || "0") / 100)).toFixed(2)} USD
+                        Total: ${total} USD
                       </p>
                     )}
                   </div>
@@ -427,7 +571,6 @@ function NewLicenseForm() {
                       <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-navy-400" />Horas de Soporte</span>
                     </label>
                     <Input type="number" min="0" value={supportHours} onChange={(e) => setSupportHours(e.target.value)} />
-                    <p className="text-xs text-navy-400 dark:text-white/30">Horas de soporte técnico incluidas</p>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-navy-700 dark:text-white/70">
@@ -456,6 +599,13 @@ function NewLicenseForm() {
                     </div>
                   </div>
                 </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-navy-700 dark:text-white/70">
+                    <span className="flex items-center gap-1.5"><Gift className="h-3.5 w-3.5 text-navy-400" />Días Gratis</span>
+                  </label>
+                  <Input type="number" min="0" value={freeDays} onChange={(e) => setFreeDays(e.target.value)} className="max-w-xs" />
+                  <p className="text-xs text-navy-400 dark:text-white/30">Período de prueba o cortesía en días</p>
+                </div>
               </CardContent>
             </Card>
 
@@ -466,7 +616,7 @@ function NewLicenseForm() {
                   <label className="text-sm font-medium text-navy-700 dark:text-white/70">
                     <span className="flex items-center gap-1.5"><FileText className="h-3.5 w-3.5 text-navy-400" />Notas</span>
                   </label>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales sobre la licencia..." rows={3} />
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
                 </div>
               </CardContent>
             </Card>
@@ -498,9 +648,14 @@ function NewLicenseForm() {
                   </div>
 
                   <div className="rounded-lg bg-navy-50 p-3 space-y-1.5 dark:bg-white/[0.03]">
+                    <span className="text-xs font-medium uppercase tracking-wider text-navy-400 dark:text-white/40">Estado</span>
+                    <Badge variant={statusMeta?.badge ?? "default"}>{statusMeta?.label ?? status}</Badge>
+                  </div>
+
+                  <div className="rounded-lg bg-navy-50 p-3 space-y-1.5 dark:bg-white/[0.03]">
                     <span className="text-xs font-medium uppercase tracking-wider text-navy-400 dark:text-white/40">Vigencia</span>
-                    <p className="text-xs text-navy-700 dark:text-white/70">{startDate || "—"} → {endDate || "—"}</p>
-                    <p className="text-xs text-navy-700 dark:text-white/70">Usuarios: {maxUsers} · Activaciones: {maxActivations}</p>
+                    <p className="font-medium text-navy-900 text-xs dark:text-white">{startDate || "—"} → {endDate || "—"}</p>
+                    <p className="text-xs text-navy-700 dark:text-white/70">Usuarios: {maxUsers} · Activaciones: {usedActivations}/{maxActivations}</p>
                     {autoRenew && <p className="text-xs text-emerald-600 dark:text-emerald-400">Auto-renovación activada</p>}
                   </div>
 
@@ -508,8 +663,8 @@ function NewLicenseForm() {
                     <span className="text-xs font-medium uppercase tracking-wider text-navy-400 dark:text-white/40">Económico</span>
                     <p className="text-xs text-navy-700 dark:text-white/70">Costo: {costUSD ? `$${costUSD} USD` : "—"}</p>
                     {discountPercent && <p className="text-xs text-emerald-600 dark:text-emerald-400">Dto: {discountPercent}%</p>}
+                    {total && <p className="text-xs font-semibold text-navy-900 dark:text-white">Total: ${total} USD</p>}
                     {vendor && <p className="text-xs text-navy-500 dark:text-white/50">Proveedor: {vendor}</p>}
-                    {purchaseOrderNumber && <p className="text-xs text-navy-500 dark:text-white/50">OC: {purchaseOrderNumber}</p>}
                   </div>
 
                   <div className="rounded-lg bg-navy-50 p-3 space-y-1.5 dark:bg-white/[0.03]">
@@ -526,18 +681,38 @@ function NewLicenseForm() {
               </Card>
             </div>
 
-            <div className="animate-fade-in-up animate-delay-6 flex flex-col gap-2">
+            <div className="animate-fade-in-up animate-delay-5 flex flex-col gap-2">
               <Button type="submit" size="lg" disabled={loading} className="w-full">
-                <Save className="mr-2 h-4 w-4" />
-                {loading ? "Guardando..." : "Guardar Licencia"}
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {loading ? "Guardando..." : "Guardar Cambios"}
               </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => router.push("/licenses")} className="w-full text-navy-400">
+              <Button type="button" variant="ghost" size="sm" onClick={() => router.push(`/licenses/${id}`)} className="w-full text-navy-400">
                 Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDelete(true)}
+                className="w-full text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar Licencia
               </Button>
             </div>
           </div>
         </div>
       </form>
+
+      <ConfirmDialog
+        isOpen={showDelete}
+        onClose={() => setShowDelete(false)}
+        onConfirm={handleDelete}
+        title="Eliminar Licencia"
+        message={`¿Estás seguro de eliminar la licencia "${licenseKey}"? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        loading={deleting}
+      />
     </div>
   );
 }

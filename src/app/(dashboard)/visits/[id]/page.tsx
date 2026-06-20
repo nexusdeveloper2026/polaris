@@ -44,7 +44,7 @@ const nextStatus: Record<string, string[]> = {
   CANCELLED: [],
 };
 
-async function getVisit(id: string) {
+async function getVisit(id: number) {
   return prisma.visit.findUnique({
     where: { id },
     include: {
@@ -64,7 +64,8 @@ export default async function VisitDetailPage({
   if (!session?.user) redirect("/login");
 
   const { id } = await params;
-  const visit = await getVisit(id);
+  const numericId = parseInt(id, 10);
+  const visit = await getVisit(numericId);
 
   if (!visit) notFound();
 
@@ -80,7 +81,7 @@ export default async function VisitDetailPage({
     }
 
     await prisma.visit.update({
-      where: { id },
+      where: { id: numericId },
       data,
     });
     redirect(`/visits/${id}`);

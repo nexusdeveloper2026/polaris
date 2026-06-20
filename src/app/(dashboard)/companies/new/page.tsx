@@ -12,8 +12,8 @@ import { ArrowLeft, Save, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { ECONOMIC_ACTIVITIES } from "@/data/economic-activities";
 
-type User = { id: string; name: string | null; email: string; hasCommissions: boolean };
-type Company = { id: string; name: string; taxIdType: string | null; taxId: string | null };
+type User = { id: number; name: string | null; email: string; hasCommissions: boolean };
+type Company = { id: number; name: string; taxIdType: string | null; taxId: string | null };
 
 export default function NewCompanyPage() {
   const router = useRouter();
@@ -54,7 +54,7 @@ export default function NewCompanyPage() {
 
   useEffect(() => {
     if (form.type === "BRANCH" && form.parentId) {
-      const parent = mainCompanies.find((c) => c.id === form.parentId);
+      const parent = mainCompanies.find((c) => c.id === Number(form.parentId));
       if (parent) {
         setForm((prev) => ({
           ...prev,
