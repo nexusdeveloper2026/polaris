@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { calculateDailyPrice } from "@/lib/utils";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const id = parseInt((await params).id);
 
@@ -29,7 +30,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const id = parseInt((await params).id);
   const body = await request.json();
@@ -60,6 +61,9 @@ export async function PUT(
     include: { category: true },
   });
 
+  const userId = Number(session.user.id);
+  logAudit({ userId, action: AUDIT_ACTIONS.UPDATE, entity: AUDIT_ENTITIES.PRODUCT, entityId: product.id, details: { name: product.name } });
+
   return NextResponse.json(product);
 }
 
@@ -68,7 +72,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const id = parseInt((await params).id);
 
@@ -81,6 +85,9 @@ export async function DELETE(
     where: { id },
     data: { isActive: false },
   });
+
+  const userId = Number(session.user.id);
+  logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.PRODUCT, entityId: id, details: { name: existing.name } });
 
   return NextResponse.json({ message: "Producto desactivado correctamente" });
 }

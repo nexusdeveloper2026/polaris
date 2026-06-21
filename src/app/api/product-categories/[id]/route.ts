@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   try {
     const id = parseInt((await params).id);
@@ -28,6 +29,9 @@ export async function PUT(
       },
     });
 
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.UPDATE, entity: AUDIT_ENTITIES.PRODUCT_CATEGORY, entityId: category.id, details: { name: category.name } });
+
     return NextResponse.json(category);
   } catch (err: any) {
     console.error("=== ERROR ACTUALIZANDO CATEGORÍA ===", err?.message, err?.code);
@@ -40,7 +44,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   try {
     const id = parseInt((await params).id);
@@ -58,6 +62,10 @@ export async function DELETE(
     }
 
     await prisma.productCategory.delete({ where: { id } });
+
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.PRODUCT_CATEGORY, entityId: id, details: { name: existing.name } });
+
     return NextResponse.json({ message: "Categoría eliminada correctamente" });
   } catch (err: any) {
     console.error("=== ERROR ELIMINANDO CATEGORÍA ===", err?.message, err?.code);

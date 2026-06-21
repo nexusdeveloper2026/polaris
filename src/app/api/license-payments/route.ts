@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   try {
@@ -101,6 +102,8 @@ export async function POST(request: NextRequest) {
         relatedEntityId: assignment.licenseId,
       },
     });
+
+    logAudit({ userId, action: AUDIT_ACTIONS.PAYMENT, entity: AUDIT_ENTITIES.LICENSE_PAYMENT, entityId: payment.id, details: { assignmentId: assignmentIdNum, amount: amountNum, paymentMethod } });
 
     console.log("[LICENSE_PAYMENT] created:", payment.id);
     return NextResponse.json(payment, { status: 201 });

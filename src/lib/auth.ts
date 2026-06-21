@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "./db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "./audit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -42,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
+        logAudit({ userId: Number(user.id), action: AUDIT_ACTIONS.LOGIN, entity: AUDIT_ENTITIES.AUTH, details: { email: user.email } });
       }
       return token;
     },

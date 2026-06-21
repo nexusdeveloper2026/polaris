@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET() {
   const session = await auth();
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest) {
         permissions: permissions || null,
       },
     });
+
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.CREATE, entity: AUDIT_ENTITIES.ROLE, entityId: role.id, details: { name: role.name } });
 
     return NextResponse.json(role, { status: 201 });
   } catch (err: any) {

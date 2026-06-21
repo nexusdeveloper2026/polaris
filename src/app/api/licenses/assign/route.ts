@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await request.json();
   const { licenseId: licenseIdRaw, assignments, renewalPeriod } = body as {
@@ -68,6 +69,11 @@ export async function POST(request: NextRequest) {
     });
 
     created.push(newAssignment);
+  }
+
+  const userId = Number(session.user.id);
+  for (const a of created) {
+    logAudit({ userId, action: AUDIT_ACTIONS.ASSIGN, entity: AUDIT_ENTITIES.LICENSE_ASSIGNMENT, entityId: a.id, details: { licenseId, companyId: a.companyId } });
   }
 
   return NextResponse.json({

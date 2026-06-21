@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function PATCH(
   request: NextRequest,
@@ -69,6 +70,9 @@ export async function PATCH(
       }
     }
 
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.UPDATE, entity: AUDIT_ENTITIES.LICENSE_PAYMENT, entityId: paymentId, details: { assignmentId: existing.assignmentId } });
+
     console.log("[LICENSE_PAYMENT] updated:", paymentId);
     return NextResponse.json(updated);
   } catch (err: unknown) {
@@ -101,6 +105,9 @@ export async function DELETE(
     }
 
     await prisma.licensePayment.delete({ where: { id: paymentId } });
+
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.LICENSE_PAYMENT, entityId: paymentId, details: { assignmentId: existing.assignmentId } });
 
     console.log("[LICENSE_PAYMENT] deleted:", paymentId);
     return NextResponse.json({ success: true });

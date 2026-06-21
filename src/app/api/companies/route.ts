@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -185,6 +186,9 @@ export async function POST(request: NextRequest) {
         economicActivity: economicActivity?.trim() || null,
       },
     });
+
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.CREATE, entity: AUDIT_ENTITIES.COMPANY, entityId: company.id, details: { name: body.name } });
 
     return NextResponse.json(company, { status: 201 });
   } catch (err: any) {

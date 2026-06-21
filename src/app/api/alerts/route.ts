@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -134,6 +135,7 @@ export async function DELETE(req: NextRequest) {
     if (id) {
       const deleted = await prisma.alert.deleteMany({ where: { id: parseInt(id), userId } });
       if (deleted.count === 0) return NextResponse.json({ error: "Alerta no encontrada" }, { status: 404 });
+      logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.ALERT, entityId: parseInt(id) });
       return NextResponse.json({ message: "Alerta eliminada" });
     }
 
@@ -141,6 +143,7 @@ export async function DELETE(req: NextRequest) {
       await prisma.alert.deleteMany({
         where: { relatedEntityType: relatedType, relatedEntityId: parseInt(relatedId) },
       });
+      logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.ALERT });
       return NextResponse.json({ message: "Alertas relacionadas eliminadas" });
     }
 

@@ -117,6 +117,53 @@ enum ReportType {
   SECURITY_CAMERAS
 }
 
+enum ReportStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum QualificationDecision {
+  APPLIES
+  DOES_NOT_APPLY
+  PENDING
+}
+
+enum ConnectionType {
+  FIBER
+  COAXIAL
+  DSL
+  SATELLITE
+  MICROWAVE
+  OTHER
+}
+
+enum NetworkTopology {
+  STAR
+  RING
+  MESH
+  TREE
+  HYBRID
+}
+
+enum CablingType {
+  CAT5
+  CAT6
+  CAT6A
+  FIBER_OPTIC
+  OTHER
+}
+
+enum CameraType {
+  DOME
+  BULLET
+  PTZ
+  TURRET
+  OTHER
+}
+
 enum ImplSheetStatus {
   DRAFT
   COMPLETED
@@ -155,6 +202,7 @@ model User {
   createdReports   TechnicalReport[]    @relation("ReportCreator")
   createdSheets    ImplementationSheet[]
   createdPayments  LicensePayment[]     @relation("PaymentCreator")
+  auditLogs        AuditLog[]
 
   @@map("users")
 }
@@ -481,9 +529,55 @@ model TechnicalReport {
   company       Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   reportType    ReportType
   title         String
+  status        ReportStatus @default(DRAFT)
+  qualification QualificationDecision @default(PENDING)
+
+  contactName   String?
+  contactPhone  String?
+  contactEmail  String?
+  address       String?
+  city          String?
+  state         String?
+
+  connectionType ConnectionType?
+  bandwidth     String?
+  powerSupply   String?   @db.Text
+  airConditioning Boolean?
+  airConditioningDetails String?
+  physicalSecurity String? @db.Text
+
+  telecomNodes  Int?
+  telecomServers Int?
+  telecomRacks  Int?
+  cablingType   CablingType?
+  fiberDistanceM Int?
+  networkTopology NetworkTopology?
+  switchRouterDetails String? @db.Text
+  upsRequirements String?  @db.Text
+
+  currentSystems String?   @db.Text
+  erpUsers      Int?
+  erpModules    String?
+  timelineExpectations String?
+  dataMigration Boolean?
+  trainingRequirements String? @db.Text
+
+  cameraCount   Int?
+  cameraType    CameraType?
+  recordingHours Int?
+  storageRequirements String?
+  monitoringNeeds String?
+  nightVision   Boolean?
+
   content       String     @db.Text
   findings      String?    @db.Text
   recommendations String?  @db.Text
+  justification String?    @db.Text
+  observations  String?    @db.Text
+
+  blueprints    Json?
+  photos        Json?
+
   createdBy     Int
   creator       User       @relation("ReportCreator", fields: [createdBy], references: [id])
   createdAt     DateTime   @default(now())
@@ -525,4 +619,23 @@ model LicensePayment {
   createdAt      DateTime       @default(now())
 
   @@map("license_payments")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  entity     String
+  entityId   Int?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

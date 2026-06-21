@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(
   _request: NextRequest,
@@ -144,6 +145,9 @@ export async function PATCH(
       },
     });
 
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.UPDATE, entity: AUDIT_ENTITIES.LICENSE, entityId: license.id, details: { status } });
+
     return NextResponse.json(license);
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : "Error desconocido";
@@ -168,5 +172,9 @@ export async function DELETE(
   }
 
   await prisma.license.delete({ where: { id } });
+
+  const userId = Number(session.user.id);
+  logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.LICENSE, entityId: id, details: { name: existing.name } });
+
   return NextResponse.json({ message: "Licencia eliminada" });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET() {
   const session = await auth();
@@ -19,7 +20,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await request.json();
   const { userId, fromLocation, toLocation, transferDate, reason } = body;
@@ -41,6 +42,9 @@ export async function POST(request: NextRequest) {
       approvedBy: true,
     },
   });
+
+  const auditUserId = Number(session.user.id);
+  logAudit({ userId: auditUserId, action: AUDIT_ACTIONS.CREATE, entity: AUDIT_ENTITIES.TRANSFER, entityId: transfer.id });
 
   return NextResponse.json(transfer, { status: 201 });
 }

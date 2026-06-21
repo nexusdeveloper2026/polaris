@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await request.json();
   const { assignmentId, licenseId, companyId, branchId } = body as {
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Asignación no encontrada" }, { status: 404 });
     }
     await prisma.licenseAssignment.delete({ where: { id: parsedAssignmentId } });
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.UNASSIGN, entity: AUDIT_ENTITIES.LICENSE_ASSIGNMENT, entityId: parsedAssignmentId, details: { licenseId: existing.licenseId, companyId: existing.companyId } });
     return NextResponse.json({ message: "Asignación eliminada" });
   }
 
@@ -45,5 +48,7 @@ export async function POST(request: NextRequest) {
   }
 
   await prisma.licenseAssignment.delete({ where: { id: existing.id } });
+  const userId = Number(session.user.id);
+  logAudit({ userId, action: AUDIT_ACTIONS.UNASSIGN, entity: AUDIT_ENTITIES.LICENSE_ASSIGNMENT, entityId: existing.id, details: { licenseId: existing.licenseId, companyId: existing.companyId } });
   return NextResponse.json({ message: "Asignación eliminada" });
 }

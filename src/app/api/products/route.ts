@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { calculateDailyPrice } from "@/lib/utils";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const categoryId = searchParams.get("categoryId");
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const body = await request.json();
   const { name, description, categoryId, type, price, cost, discountPercent, ivaPercent, paymentPeriod } = body;
@@ -51,6 +52,9 @@ export async function POST(request: NextRequest) {
     },
     include: { category: true },
   });
+
+  const userId = Number(session.user.id);
+  logAudit({ userId, action: AUDIT_ACTIONS.CREATE, entity: AUDIT_ENTITIES.PRODUCT, entityId: product.id, details: { name: product.name } });
 
   return NextResponse.json(product, { status: 201 });
 }

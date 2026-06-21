@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(
   _request: NextRequest,
@@ -105,6 +106,9 @@ export async function PUT(
       },
     });
 
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.UPDATE, entity: AUDIT_ENTITIES.USER, entityId: user.id, details: { name: user.name, email: user.email } });
+
     return NextResponse.json(user);
   } catch (err: any) {
     console.error("=== ERROR ACTUALIZANDO USUARIO ===", err?.message, err?.code);
@@ -138,6 +142,10 @@ export async function DELETE(
     }
 
     await prisma.user.delete({ where: { id } });
+
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.USER, entityId: id, details: { name: existing.name, email: existing.email } });
+
     return NextResponse.json({ message: "Usuario eliminado" });
   } catch (err: any) {
     console.error("=== ERROR ELIMINANDO USUARIO ===", err?.message, err?.code);

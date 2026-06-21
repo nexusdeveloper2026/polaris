@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function PATCH(
   request: NextRequest,
@@ -38,6 +39,9 @@ export async function PATCH(
       },
     });
 
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.UPDATE, entity: AUDIT_ENTITIES.LICENSE_ASSIGNMENT, entityId: assignment.id, details: { licenseId: assignment.licenseId } });
+
     return NextResponse.json(assignment);
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : "Error desconocido";
@@ -63,6 +67,10 @@ export async function DELETE(
     }
 
     await prisma.licenseAssignment.delete({ where: { id } });
+
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.LICENSE_ASSIGNMENT, entityId: id, details: { licenseId: existing.licenseId } });
+
     return NextResponse.json({ message: "Asignación eliminada" });
   } catch (err: unknown) {
     const detail = err instanceof Error ? err.message : "Error desconocido";

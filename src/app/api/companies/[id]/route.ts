@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(
   _request: NextRequest,
@@ -140,6 +141,9 @@ export async function PUT(
       });
     }
 
+    const userId = Number(session.user.id);
+    logAudit({ userId, action: AUDIT_ACTIONS.UPDATE, entity: AUDIT_ENTITIES.COMPANY, entityId: company.id, details: { name: company.name } });
+
     return NextResponse.json(company);
   } catch (err: any) {
     console.error("=== ERROR ACTUALIZANDO EMPRESA ===");
@@ -200,6 +204,9 @@ export async function DELETE(
   }
 
   await prisma.company.delete({ where: { id } });
+
+  const userId = Number(session.user.id);
+  logAudit({ userId, action: AUDIT_ACTIONS.DELETE, entity: AUDIT_ENTITIES.COMPANY, entityId: id, details: { name: existing.name } });
 
   return NextResponse.json({ message: "Empresa eliminada correctamente" });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { logAudit, AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,15 +13,19 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const companyId = searchParams.get("companyId");
     const reportType = searchParams.get("reportType");
+    const status = searchParams.get("status");
+    const qualification = searchParams.get("qualification");
 
     const where: Record<string, unknown> = {};
     if (companyId) where.companyId = parseInt(companyId);
     if (reportType) where.reportType = reportType;
+    if (status) where.status = status;
+    if (qualification) where.qualification = qualification;
 
     const reports = await prisma.technicalReport.findMany({
       where,
       include: {
-        company: { select: { id: true, name: true } },
+        company: { select: { id: true, name: true, taxId: true } },
         creator: { select: { id: true, name: true, email: true } },
         visit: { select: { id: true, type: true, scheduledDate: true } },
       },
@@ -28,12 +33,9 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(reports);
-  } catch (error: any) {
-    console.error("=== ERROR OBTENIENDO REPORTES TÉCNICOS ===", error?.message, error?.code);
-    return NextResponse.json(
-      { error: `Error al obtener reportes técnicos: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    return NextResponse.json({ error: `Error al obtener informes: ${message}` }, { status: 500 });
   }
 }
 
@@ -45,21 +47,19 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { visitId, companyId, reportType, title, content, findings, recommendations } = body;
+    const {
+      visitId, companyId, reportType, title, status, qualification,
+      contactName, contactPhone, contactEmail, address, city, state,
+      connectionType, bandwidth, powerSupply, airConditioning, airConditioningDetails, physicalSecurity,
+      telecomNodes, telecomServers, telecomRacks, cablingType, fiberDistanceM, networkTopology, switchRouterDetails, upsRequirements,
+      currentSystems, erpUsers, erpModules, timelineExpectations, dataMigration, trainingRequirements,
+      cameraCount, cameraType, recordingHours, storageRequirements, monitoringNeeds, nightVision,
+      content, findings, recommendations, justification, observations,
+      blueprints, photos,
+    } = body;
 
-    if (!companyId || !reportType || !title || !content) {
-      return NextResponse.json(
-        { error: "companyId, reportType, title y content son requeridos" },
-        { status: 400 }
-      );
-    }
-
-    const validTypes = ["ERP_INSTALLATION", "TELECOM_NETWORK", "SECURITY_CAMERAS"];
-    if (!validTypes.includes(reportType)) {
-      return NextResponse.json(
-        { error: "Tipo de reporte inválido" },
-        { status: 400 }
-      );
+    if (!companyId || !reportType || !title) {
+      return NextResponse.json({ error: "companyId, reportType y title son requeridos" }, { status: 400 });
     }
 
     const report = await prisma.technicalReport.create({
@@ -68,23 +68,62 @@ export async function POST(req: NextRequest) {
         companyId: parseInt(companyId),
         reportType,
         title,
-        content,
+        status: status || "DRAFT",
+        qualification: qualification || "PENDING",
+        contactName: contactName || null,
+        contactPhone: contactPhone || null,
+        contactEmail: contactEmail || null,
+        address: address || null,
+        city: city || null,
+        state: state || null,
+        connectionType: connectionType || null,
+        bandwidth: bandwidth || null,
+        powerSupply: powerSupply || null,
+        airConditioning: airConditioning ?? false,
+        airConditioningDetails: airConditioningDetails || null,
+        physicalSecurity: physicalSecurity || null,
+        telecomNodes: telecomNodes ? parseInt(telecomNodes) : null,
+        telecomServers: telecomServers ? parseInt(telecomServers) : null,
+        telecomRacks: telecomRacks ? parseInt(telecomRacks) : null,
+        cablingType: cablingType || null,
+        fiberDistanceM: fiberDistanceM ? parseInt(fiberDistanceM) : null,
+        networkTopology: networkTopology || null,
+        switchRouterDetails: switchRouterDetails || null,
+        upsRequirements: upsRequirements || null,
+        currentSystems: currentSystems || null,
+        erpUsers: erpUsers ? parseInt(erpUsers) : null,
+        erpModules: erpModules || null,
+        timelineExpectations: timelineExpectations || null,
+        dataMigration: dataMigration ?? false,
+        trainingRequirements: trainingRequirements || null,
+        cameraCount: cameraCount ? parseInt(cameraCount) : null,
+        cameraType: cameraType || null,
+        recordingHours: recordingHours ? parseInt(recordingHours) : null,
+        storageRequirements: storageRequirements || null,
+        monitoringNeeds: monitoringNeeds || null,
+        nightVision: nightVision ?? false,
+        content: content || "",
         findings: findings || null,
         recommendations: recommendations || null,
-        createdBy: parseInt(String((session.user as any).id)),
+        justification: justification || null,
+        observations: observations || null,
+        blueprints: blueprints || undefined,
+        photos: photos || undefined,
+        createdBy: Number((session.user as Record<string, unknown>).id),
       },
       include: {
-        company: { select: { id: true, name: true } },
+        company: { select: { id: true, name: true, taxId: true } },
         creator: { select: { id: true, name: true, email: true } },
       },
     });
 
+    const userId = Number((session.user as Record<string, unknown>).id);
+    logAudit({ userId, action: AUDIT_ACTIONS.CREATE, entity: AUDIT_ENTITIES.TECHNICAL_REPORT, entityId: report.id, details: { title, reportType, companyId } });
+
     return NextResponse.json(report, { status: 201 });
-  } catch (error: any) {
-    console.error("=== ERROR CREANDO REPORTE TÉCNICO ===", error?.message, error?.code);
-    return NextResponse.json(
-      { error: `Error al crear reporte técnico: ${error?.message || "Error desconocido"}${error?.code ? ` [${error.code}]` : ""}` },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    const code = (error as { code?: string })?.code || "";
+    return NextResponse.json({ error: `Error al crear informe: ${message} [${code}]` }, { status: 500 });
   }
 }

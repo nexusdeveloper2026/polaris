@@ -23,6 +23,8 @@ import {
   Tags,
   Settings,
   ChevronDown,
+  HardDrive,
+  Eye,
 } from "lucide-react";
 import type { NavItem } from "@/types";
 
@@ -52,6 +54,8 @@ const navItems: NavItem[] = [
       { title: "Licencias", href: "/licenses", icon: <KeyRound size={19} /> },
       { title: "Usuarios", href: "/users", icon: <Users size={19} /> },
       { title: "Perfiles", href: "/roles", icon: <Shield size={19} /> },
+      { title: "Backup / Base de Datos", href: "/backup", icon: <HardDrive size={19} /> },
+      { title: "Registro de Actividad", href: "/audit", icon: <Eye size={19} /> },
     ],
   },
 ];
