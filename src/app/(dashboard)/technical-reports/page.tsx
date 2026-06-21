@@ -102,7 +102,7 @@ export default function TechnicalReportsPage() {
     try {
       const res = await fetch(`/api/technical-reports/${deleteId}`, { method: "DELETE" });
       if (res.ok) {
-        toast.success("Informe eliminado");
+        toast.success("Inspección eliminada");
         setReports((prev) => prev.filter((r) => r.id !== deleteId));
         setDeleteId(null);
       } else {
@@ -121,11 +121,11 @@ export default function TechnicalReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Informes Técnicos"
+        title="Inspecciones Técnicas"
         subtitle="Levantamiento de información en campo para determinar elegibilidad de instalación"
         actions={
           <Link href="/technical-reports/new">
-            <Button><Plus className="mr-2 h-4 w-4" />Nuevo Informe</Button>
+            <Button><Plus className="mr-2 h-4 w-4" />Nueva Inspección</Button>
           </Link>
         }
       />
@@ -158,7 +158,7 @@ export default function TechnicalReportsPage() {
           {loading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-navy-300" /></div>
           ) : filtered.length === 0 ? (
-            <EmptyState icon={<FileText className="h-12 w-12" />} message="No hay informes registrados" />
+            <EmptyState icon={<FileText className="h-12 w-12" />} message="No hay inspecciones registradas" />
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -223,8 +223,8 @@ export default function TechnicalReportsPage() {
         isOpen={deleteId !== null}
         onClose={() => setDeleteId(null)}
         onConfirm={handleDelete}
-        title="Eliminar Informe"
-        message="¿Estás seguro de eliminar este informe técnico? Esta acción no se puede deshacer."
+        title="Eliminar Inspección"
+        message="¿Estás seguro de eliminar esta inspección técnica? Esta acción no se puede deshacer."
         confirmLabel={deleting ? "Eliminando..." : "Eliminar"}
         loading={deleting}
       />

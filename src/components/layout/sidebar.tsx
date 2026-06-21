@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
     children: [
       { title: "Visitas", href: "/visits", icon: <CalendarCheck size={19} /> },
       { title: "Traslados", href: "/transfers", icon: <Truck size={19} /> },
-      { title: "Informes Técnicos", href: "/technical-reports", icon: <FileText size={19} /> },
+      { title: "Inspecciones Técnicas", href: "/technical-reports", icon: <FileText size={19} /> },
       { title: "Fichas Implementación", href: "/implementation-sheets", icon: <ClipboardList size={19} /> },
     ],
   },

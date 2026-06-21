@@ -22,7 +22,7 @@ export const MODULES: ModuleConfig[] = [
   { key: "users", label: "Usuarios", icon: "👥", actions: ["view", "create", "edit", "delete"] },
   { key: "roles", label: "Perfiles", icon: "🛡️", actions: ["view", "create", "edit", "delete"] },
   { key: "alerts", label: "Alertas", icon: "🔔", actions: ["view"] },
-  { key: "technical-reports", label: "Informes Técnicos", icon: "📋", actions: ["view", "create", "edit", "delete"] },
+  { key: "technical-reports", label: "Inspecciones Técnicas", icon: "📋", actions: ["view", "create", "edit", "delete"] },
   { key: "implementation-sheets", label: "Fichas Implementación", icon: "📄", actions: ["view", "create", "edit", "delete"] },
   { key: "settings", label: "Configuración", icon: "⚙️", actions: ["view"] },
 ];

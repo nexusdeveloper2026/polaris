@@ -22,6 +22,7 @@ type ReportDetail = {
   qualification: string;
   companyId: number;
   company: { id: number; name: string; taxId: string | null; taxIdType: string | null; address: string | null; phone: string | null; email: string | null; state: string | null; municipality: string | null };
+  branch: { id: number; name: string } | null;
   creator: { id: number; name: string | null; email: string };
   visit: { id: number; type: string; scheduledDate: string | null; notes: string | null } | null;
   contactName: string | null;
@@ -107,7 +108,7 @@ export default function TechnicalReportDetailPage() {
   }, [params.id]);
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-navy-300" /></div>;
-  if (!report) return <div className="text-center py-12 text-navy-400">Informe no encontrado</div>;
+  if (!report) return <div className="text-center py-12 text-navy-400">Inspección no encontrada</div>;
 
   return (
     <div className="space-y-6">
@@ -274,6 +275,7 @@ export default function TechnicalReportDetailPage() {
             <CardContent className="space-y-3 py-5">
               <Section icon={Building2} title="Empresa">
                 <Row label="Nombre" value={report.company.name} />
+                {report.branch && <Row label="Sucursal" value={report.branch.name} />}
                 <Row label="RIF/NIT" value={report.company.taxId ? `${report.company.taxIdType || ""}-${report.company.taxId}` : "—"} />
                 <Row label="Dirección" value={report.company.address || "—"} />
                 <Row label="Teléfono" value={report.company.phone || "—"} />

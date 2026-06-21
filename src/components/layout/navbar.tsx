@@ -17,7 +17,7 @@ const pageTitles: Record<string, string> = {
   "/users": "Usuarios",
   "/roles": "Perfiles",
   "/alerts": "Alertas",
-  "/technical-reports": "Informes Técnicos",
+  "/technical-reports": "Inspecciones Técnicas",
   "/implementation-sheets": "Fichas de Implementación",
 };
 

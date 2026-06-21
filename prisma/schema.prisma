@@ -286,6 +286,7 @@ model Company {
   clientProducts   ClientProduct[]
   licenseCompanies LicenseAssignment[] @relation("LicenseCompany")
   licenseBranches  LicenseAssignment[] @relation("LicenseBranch")
+  inspectionBranches TechnicalReport[] @relation("InspectionBranch")
   visits           Visit[]
   supportCases     SupportCase[]
   technicalReports TechnicalReport[]
@@ -527,7 +528,10 @@ model TechnicalReport {
   visit         Visit?     @relation(fields: [visitId], references: [id])
   companyId     Int
   company       Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  branchId      Int?
+  branch        Company?   @relation("InspectionBranch", fields: [branchId], references: [id])
   reportType    ReportType
+  inspectionTypes String?  @db.Text
   title         String
   status        ReportStatus @default(DRAFT)
   qualification QualificationDecision @default(PENDING)
@@ -538,13 +542,119 @@ model TechnicalReport {
   address       String?
   city          String?
   state         String?
-
+  gmapUrl       String?
   connectionType ConnectionType?
   bandwidth     String?
   powerSupply   String?   @db.Text
   airConditioning Boolean?
   airConditioningDetails String?
   physicalSecurity String? @db.Text
+
+  cctvExistingSystem     String?
+  cctvCameraCount        Int?
+  cctvCameraType         String?
+  cctvCameraResolution   String?
+  cctvCameraBrand        String?
+  cctvCameraCondition    String?
+  cctvDvrNvrBrand        String?
+  cctvDvrNvrChannels     String?
+  cctvStorageCapacity    String?
+  cctvRetentionDays      String?
+  cctvCablingType        String?
+  cctvCablingLength      Int?
+  cctvPowerSupply        String?
+  cctvMonitoringLocation String?
+  cctvAreasToCover       String? @db.Text
+  cctvAreasCovered       String? @db.Text
+  cctvBlindSpots         String? @db.Text
+  cctvInstallationType   String?
+  cctvNightVision        Boolean @default(false)
+  cctvRemoteAccess       Boolean @default(false)
+  cctvAlarmIntegration   Boolean @default(false)
+  cctvAccessControl      Boolean @default(false)
+  cctvMountingLocations  String? @db.Text
+  cctvLightingConditions String?
+  cctvWeatherExposure    String?
+  cctvNetworkBandwidth   String?
+  cctvAdditionalNotes    String? @db.Text
+
+  swDevType          String?
+  swCurrentSystem    String? @db.Text
+  swCurrentWebsite   String?
+  swCurrentApp       String?
+  swCurrentSoftware  String? @db.Text
+  swCurrentTech      String?
+  swCurrentIssues    String? @db.Text
+  swRequiredType     String?
+  swRequiredFeatures String? @db.Text
+  swRequiredModules  String? @db.Text
+  swTargetUsers      String?
+  swUserRoles        String?
+  swIntegrationNeeds String? @db.Text
+  swHostingType      String?
+  swDomainStatus     String?
+  swDomainName       String?
+  swBudget           String?
+  swTimeline         String?
+  swSecurityNeeds    String? @db.Text
+  swMaintenanceNeeds String?
+  swTrainingNeeds    String? @db.Text
+  swAdditionalNotes  String? @db.Text
+
+  netCurrentTopology     String?
+  netCurrentBandwidth    String?
+  netCurrentIsp          String?
+  netCurrentRouter       String?
+  netCurrentSwitch       String?
+  netCurrentFirewall     String?
+  netCurrentWifiAp       String?
+  netCurrentCabling      String?
+  netCurrentServerRoom   String? @db.Text
+  netCurrentIssues       String? @db.Text
+  netRequiredTopology    String?
+  netRequiredBandwidth   String?
+  netRequiredEquipment   String? @db.Text
+  netRequiredCabling     String?
+  netRequiredSecurity    String? @db.Text
+  netRequiredVpn         Boolean @default(false)
+  netRequiredWifi        Boolean @default(false)
+  netRequiredVoip        Boolean @default(false)
+  netRequiredBackup      Boolean @default(false)
+  netRequiredMonitoring  Boolean @default(false)
+  netWifiCoverage        String?
+  netWifiZones           String? @db.Text
+  netVlanNeeds           String?
+  netRemoteAccessNeeds   String? @db.Text
+  netBackupStrategy      String? @db.Text
+  netMaintenanceNeeds    String?
+  netAdditionalNotes     String? @db.Text
+
+  supType                   String?
+  supRemoteHours            String?
+  supOnSiteHours            String?
+  supScheduleDays           String?
+  supScheduleTimeStart      String?
+  supScheduleTimeEnd        String?
+  supResponseTime           String?
+  supCurrentEquipBrand      String?
+  supCurrentEquipModel      String?
+  supCurrentEquipQty        String?
+  supCurrentEquipCondition  String?
+  supCurrentEquipWarranty   String?
+  supCurrentSoftware        String? @db.Text
+  supCurrentIssues          String? @db.Text
+  supRequiredServices       String? @db.Text
+  supRequiredCoverage       String?
+  supRequiredSlA            String?
+  supRequiredTraining       Boolean @default(false)
+  supRequiredDocumentation  Boolean @default(false)
+  supRequiredInventory      Boolean @default(false)
+  supRequiredOnSiteVisit    Boolean @default(false)
+  supRequiredRemoteAccess   Boolean @default(false)
+  supClientExpectations     String? @db.Text
+  supBudgetRange            String?
+  supContractDuration       String?
+  supAdditionalNotes        String? @db.Text
 
   telecomNodes  Int?
   telecomServers Int?
@@ -577,6 +687,7 @@ model TechnicalReport {
 
   blueprints    Json?
   photos        Json?
+  equipment     Json?
 
   createdBy     Int
   creator       User       @relation("ReportCreator", fields: [createdBy], references: [id])

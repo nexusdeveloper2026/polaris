@@ -59,7 +59,7 @@ const entityConfig: Record<string, { label: string; icon: typeof Building2 }> = 
   supportCase: { label: "Caso Soporte", icon: FileText },
   transfer: { label: "Traslado", icon: RefreshCw },
   alert: { label: "Alerta", icon: AlertTriangle },
-  technicalReport: { label: "Informe Técnico", icon: FileText },
+  technicalReport: { label: "Inspección Técnica", icon: FileText },
   implementationSheet: { label: "Ficha Implementación", icon: ClipboardList },
   role: { label: "Rol", icon: Shield },
   contact: { label: "Contacto", icon: Users },

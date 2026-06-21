@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(reports);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error desconocido";
-    return NextResponse.json({ error: `Error al obtener informes: ${message}` }, { status: 500 });
+    return NextResponse.json({ error: `Error al obtener inspecciones: ${message}` }, { status: 500 });
   }
 }
 
@@ -48,25 +48,27 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      visitId, companyId, reportType, title, status, qualification,
-      contactName, contactPhone, contactEmail, address, city, state,
+      visitId, companyId, branchId, reportType, inspectionTypes, title, status, qualification,
+      contactName, contactPhone, contactEmail, address, city, state, gmapUrl,
       connectionType, bandwidth, powerSupply, airConditioning, airConditioningDetails, physicalSecurity,
       telecomNodes, telecomServers, telecomRacks, cablingType, fiberDistanceM, networkTopology, switchRouterDetails, upsRequirements,
       currentSystems, erpUsers, erpModules, timelineExpectations, dataMigration, trainingRequirements,
       cameraCount, cameraType, recordingHours, storageRequirements, monitoringNeeds, nightVision,
       content, findings, recommendations, justification, observations,
-      blueprints, photos,
+      blueprints, photos, equipment,
     } = body;
 
-    if (!companyId || !reportType || !title) {
-      return NextResponse.json({ error: "companyId, reportType y title son requeridos" }, { status: 400 });
+    if (!companyId || !inspectionTypes || !Array.isArray(inspectionTypes) || inspectionTypes.length === 0) {
+      return NextResponse.json({ error: "companyId e inspectionTypes son requeridos (mínimo uno)" }, { status: 400 });
     }
 
     const report = await prisma.technicalReport.create({
       data: {
         visitId: visitId ? parseInt(visitId) : null,
         companyId: parseInt(companyId),
+        branchId: branchId ? parseInt(branchId) : null,
         reportType,
+        inspectionTypes: Array.isArray(inspectionTypes) ? JSON.stringify(inspectionTypes) : inspectionTypes || null,
         title,
         status: status || "DRAFT",
         qualification: qualification || "PENDING",
@@ -76,6 +78,7 @@ export async function POST(req: NextRequest) {
         address: address || null,
         city: city || null,
         state: state || null,
+        gmapUrl: gmapUrl || null,
         connectionType: connectionType || null,
         bandwidth: bandwidth || null,
         powerSupply: powerSupply || null,
@@ -109,6 +112,7 @@ export async function POST(req: NextRequest) {
         observations: observations || null,
         blueprints: blueprints || undefined,
         photos: photos || undefined,
+        equipment: Array.isArray(equipment) ? JSON.stringify(equipment) : equipment || undefined,
         createdBy: Number((session.user as Record<string, unknown>).id),
       },
       include: {
@@ -124,6 +128,6 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error desconocido";
     const code = (error as { code?: string })?.code || "";
-    return NextResponse.json({ error: `Error al crear informe: ${message} [${code}]` }, { status: 500 });
+    return NextResponse.json({ error: `Error al crear inspección: ${message} [${code}]` }, { status: 500 });
   }
 }
