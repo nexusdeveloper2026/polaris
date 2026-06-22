@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -10,16 +10,19 @@ import { Select } from "@/components/ui/select";
 import { PageHeader } from "@/components/ui/page-header";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/modal";
 import {
   Loader2, Save, ArrowLeft, Building2, Wifi, Server, Camera,
   FileText, Upload, X, Plus, Network, Shield, Cpu, MapPin, Crosshair, ExternalLink, Trash2, Pencil, Eye, Code,
+  CheckCircle2, AlertTriangle, XCircle, Lock,
 } from "lucide-react";
 import { TagInput } from "@/components/ui/tag-input";
+import { SignaturePad } from "@/components/ui/signature-pad";
 
 type Company = { id: number; name: string; taxId: string | null };
 type Branch = { id: number; name: string };
 
-type ReportData = {
+export type ReportData = {
   id?: number;
   companyId: string;
   branchId: string;
@@ -37,6 +40,12 @@ type ReportData = {
   gmapUrl: string;
   connectionType: string;
   bandwidth: string;
+  speedDownload: string;
+  speedUpload: string;
+  speedLatency: string;
+  speedConnectionType: string;
+  speedIsp: string;
+  speedIp: string;
   powerSupply: string;
   airConditioning: boolean;
   airConditioningDetails: string;
@@ -68,28 +77,6 @@ type ReportData = {
   cctvWeatherExposure: string;
   cctvNetworkBandwidth: string;
   cctvAdditionalNotes: string;
-  swDevType: string;
-  swCurrentSystem: string;
-  swCurrentWebsite: string;
-  swCurrentApp: string;
-  swCurrentSoftware: string;
-  swCurrentTech: string;
-  swCurrentIssues: string;
-  swRequiredType: string;
-  swRequiredFeatures: string;
-  swRequiredModules: string;
-  swTargetUsers: string;
-  swUserRoles: string;
-  swIntegrationNeeds: string;
-  swHostingType: string;
-  swDomainStatus: string;
-  swDomainName: string;
-  swBudget: string;
-  swTimeline: string;
-  swSecurityNeeds: string;
-  swMaintenanceNeeds: string;
-  swTrainingNeeds: string;
-  swAdditionalNotes: string;
   netCurrentTopology: string;
   netCurrentBandwidth: string;
   netCurrentIsp: string;
@@ -157,6 +144,48 @@ type ReportData = {
   timelineExpectations: string;
   dataMigration: boolean;
   trainingRequirements: string;
+  swDevType: string;
+  swDevPlatform: string;
+  swDevFeatures: string;
+  swDevUserRoles: string;
+  swDevIntegrations: string;
+  swDevHosting: string;
+  swDevDomain: string;
+  swDevSSL: boolean;
+  swDevDatabase: string;
+  swDevDesignReqs: string;
+  swDevMobileResponsive: boolean;
+  swDevBranding: boolean;
+  swDevSecurityReqs: string;
+  swDevAuthType: string;
+  swDevVersionControl: string;
+  swDevCICD: boolean;
+  swDevTesting: string;
+  swDevBudget: string;
+  swDevMaintenance: string;
+  swDevDocumentation: string;
+  swDevAdditionalNotes: string;
+  secExistingSystem: string;
+  secType: string;
+  secCameraCount: string;
+  secCameraType: string;
+  secCameraResolution: string;
+  secCameraBrand: string;
+  secCameraCondition: string;
+  secDvrNvrType: string;
+  secDvrNvrBrand: string;
+  secStorageDays: string;
+  secCablingType: string;
+  secPowerSupply: string;
+  secMonitoringLocation: string;
+  secAreasToCover: string;
+  secAreasCovered: string;
+  secBlindSpots: string;
+  secNightVision: boolean;
+  secRemoteAccess: boolean;
+  secAlarmIntegration: boolean;
+  secAccessControl: boolean;
+  secAdditionalNotes: string;
   cameraCount: string;
   cameraType: string;
   recordingHours: string;
@@ -187,6 +216,16 @@ type ReportData = {
   }[];
   blueprints: { name: string; url: string; size: number; type: string }[];
   photos: { name: string; url: string; size: number; type: string }[];
+  videos: { name: string; url: string; size: number; type: string }[];
+  documents: { name: string; url: string; size: number; type: string }[];
+  technicianSignature: string | null;
+  clientSignature: string | null;
+  clientName: string;
+  clientDocType: string;
+  clientDocNumber: string;
+  clientPosition: string;
+  technicianSignatureLocked: boolean;
+  clientSignatureLocked: boolean;
 };
 
 const initialData: ReportData = {
@@ -206,6 +245,12 @@ const initialData: ReportData = {
   gmapUrl: "",
   connectionType: "",
   bandwidth: "",
+  speedDownload: "",
+  speedUpload: "",
+  speedLatency: "",
+  speedConnectionType: "",
+  speedIsp: "",
+  speedIp: "",
   powerSupply: "",
   airConditioning: false,
   airConditioningDetails: "",
@@ -237,28 +282,6 @@ const initialData: ReportData = {
   cctvWeatherExposure: "",
   cctvNetworkBandwidth: "",
   cctvAdditionalNotes: "",
-  swDevType: "",
-  swCurrentSystem: "",
-  swCurrentWebsite: "",
-  swCurrentApp: "",
-  swCurrentSoftware: "",
-  swCurrentTech: "",
-  swCurrentIssues: "",
-  swRequiredType: "",
-  swRequiredFeatures: "",
-  swRequiredModules: "",
-  swTargetUsers: "",
-  swUserRoles: "",
-  swIntegrationNeeds: "",
-  swHostingType: "",
-  swDomainStatus: "",
-  swDomainName: "",
-  swBudget: "",
-  swTimeline: "",
-  swSecurityNeeds: "",
-  swMaintenanceNeeds: "",
-  swTrainingNeeds: "",
-  swAdditionalNotes: "",
   netCurrentTopology: "",
   netCurrentBandwidth: "",
   netCurrentIsp: "",
@@ -326,6 +349,48 @@ const initialData: ReportData = {
   timelineExpectations: "",
   dataMigration: false,
   trainingRequirements: "",
+  swDevType: "",
+  swDevPlatform: "",
+  swDevFeatures: "",
+  swDevUserRoles: "",
+  swDevIntegrations: "",
+  swDevHosting: "",
+  swDevDomain: "",
+  swDevSSL: false,
+  swDevDatabase: "",
+  swDevDesignReqs: "",
+  swDevMobileResponsive: false,
+  swDevBranding: false,
+  swDevSecurityReqs: "",
+  swDevAuthType: "",
+  swDevVersionControl: "",
+  swDevCICD: false,
+  swDevTesting: "",
+  swDevBudget: "",
+  swDevMaintenance: "",
+  swDevDocumentation: "",
+  swDevAdditionalNotes: "",
+  secExistingSystem: "",
+  secType: "",
+  secCameraCount: "",
+  secCameraType: "",
+  secCameraResolution: "",
+  secCameraBrand: "",
+  secCameraCondition: "",
+  secDvrNvrType: "",
+  secDvrNvrBrand: "",
+  secStorageDays: "",
+  secCablingType: "",
+  secPowerSupply: "",
+  secMonitoringLocation: "",
+  secAreasToCover: "",
+  secAreasCovered: "",
+  secBlindSpots: "",
+  secNightVision: false,
+  secRemoteAccess: false,
+  secAlarmIntegration: false,
+  secAccessControl: false,
+  secAdditionalNotes: "",
   cameraCount: "",
   cameraType: "",
   recordingHours: "",
@@ -340,6 +405,16 @@ const initialData: ReportData = {
   equipment: [],
   blueprints: [],
   photos: [],
+  videos: [],
+  documents: [],
+  technicianSignature: null,
+  clientSignature: null,
+  clientName: "",
+  clientDocType: "V",
+  clientDocNumber: "",
+  clientPosition: "",
+  technicianSignatureLocked: false,
+  clientSignatureLocked: false,
 };
 
 function SectionTitle({ icon: Icon, title }: { icon: typeof FileText; title: string }) {
@@ -360,23 +435,97 @@ function Field({ label, children, className = "" }: { label: string; children: R
   );
 }
 
-export default function TechnicalReportForm({ existingData }: { existingData?: ReportData & { id: number } }) {
+export default function TechnicalReportForm({ existingData, readOnly = false }: { existingData?: ReportData & { id: number }; readOnly?: boolean }) {
   const router = useRouter();
   const isEdit = !!existingData;
+  const isFinalized = readOnly || (existingData?.status === "SUBMITTED");
   const [data, setData] = useState<ReportData>(existingData || initialData);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [companyDetails, setCompanyDetails] = useState<{ taxId: string | null; taxIdType: string | null; address: string | null; phone: string | null; name: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [lockedTec, setLockedTec] = useState(existingData?.technicianSignatureLocked ?? false);
+  const [lockedClient, setLockedClient] = useState(existingData?.clientSignatureLocked ?? false);
+  const [loggedUser, setLoggedUser] = useState<{ name: string | null; docType: string | null; docNumber: string | null } | null>(null);
   const [locating, setLocating] = useState(false);
   const [savedEquipmentIdx, setSavedEquipmentIdx] = useState<number | null>(null);
   const [equipmentFormOpen, setEquipmentFormOpen] = useState(false);
   const [editingEquipmentIdx, setEditingEquipmentIdx] = useState<number | null>(null);
   const [newEquipment, setNewEquipment] = useState({ type: "", applies: false, brand: "", model: "", serialNumber: "", quantity: "", condition: "", status: "", specs: "", posProcessor: "", posRam: "", posStorageType: "", posStorageCapacity: "", posOs: "", posNotes: "" });
   const [speedTesting, setSpeedTesting] = useState(false);
-  const [speedResult, setSpeedResult] = useState<{ download: string; upload: string; latency: string; connection: string; isp: string; ip: string } | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [speedResult, setSpeedResult] = useState<{ download: string; upload: string; latency: string; connection: string; isp: string; ip: string } | null>(
+    existingData?.speedDownload ? { download: existingData.speedDownload, upload: existingData.speedUpload || "N/A", latency: existingData.speedLatency || "", connection: existingData.speedConnectionType || "", isp: existingData.speedIsp || "", ip: existingData.speedIp || "" } : null
+  );
   const [speedStatus, setSpeedStatus] = useState<"idle" | "success" | "error">("idle");
+
+  type DiagnosticResult = { status: "APPLIES" | "DOES_NOT_APPLY" | "APPLIES_WITH_OBSERVATIONS"; sections: { name: string; status: "OK" | "WARNING" | "CRITICAL"; message: string }[] };
+  function computeDiagnostic(): DiagnosticResult {
+    const sections: DiagnosticResult["sections"] = [];
+    const hasInspectionTypes = data.inspectionTypes.length > 0;
+    const hasCompany = !!data.companyId;
+    const hasContact = !!(data.contactName && data.contactPhone);
+    if (!hasCompany) sections.push({ name: "Empresa", status: "CRITICAL", message: "No se ha seleccionado empresa" });
+    if (!hasContact) sections.push({ name: "Contacto", status: "WARNING", message: "Falta información de contacto" });
+    if (!hasInspectionTypes) sections.push({ name: "Tipos de Inspección", status: "CRITICAL", message: "No se han seleccionado tipos de inspección" });
+    const hasEquipment = data.equipment.length > 0;
+    const eqApplies = data.equipment.filter(e => e.applies);
+    const eqNotApplies = data.equipment.filter(e => !e.applies);
+    const eqLabel = (e: typeof data.equipment[0]) => e.brand ? `${e.type} (${e.brand})` : e.type;
+    if (!hasEquipment) sections.push({ name: "Equipos", status: "WARNING", message: "No hay equipos registrados" });
+    else if (eqApplies.length === 0) {
+      const names = data.equipment.map(eqLabel).join(", ");
+      sections.push({ name: "Equipos", status: "CRITICAL", message: `Ninguno aplica: ${names}` });
+    }
+    else if (eqNotApplies.length > 0) {
+      const notNames = eqNotApplies.map(eqLabel).join(", ");
+      sections.push({ name: "Equipos", status: "WARNING", message: `${eqApplies.length} de ${data.equipment.length} aplican. No aplican: ${notNames}` });
+    }
+    else sections.push({ name: "Equipos", status: "OK", message: `Todos los ${eqApplies.length} equipos aplican` });
+    if (!data.connectionType) sections.push({ name: "Infraestructura", status: "WARNING", message: "No se ha especificado tipo de conexión" });
+    else sections.push({ name: "Infraestructura", status: "OK", message: "Infraestructura documentada" });
+    if (!data.bandwidth) sections.push({ name: "Ancho de Banda", status: "WARNING", message: "No se ha medido el ancho de banda" });
+    else sections.push({ name: "Ancho de Banda", status: "OK", message: `Ancho de banda: ${data.bandwidth}` });
+    if (data.inspectionTypes.includes("TELECOM_NETWORK")) {
+      if (!data.netCurrentTopology) sections.push({ name: "Red de Telecomunicaciones", status: "WARNING", message: "Topología de red no especificada" });
+      else sections.push({ name: "Red de Telecomunicaciones", status: "OK", message: "Red documentada" });
+    }
+    if (data.inspectionTypes.includes("SOFTWARE_DEV")) {
+      if (!data.swDevType) sections.push({ name: "Software / Desarrollo", status: "WARNING", message: "Tipo de desarrollo no especificado" });
+      else sections.push({ name: "Software / Desarrollo", status: "OK", message: "Requerimientos documentados" });
+    }
+    if (data.inspectionTypes.includes("SECURITY_ELECTRONIC")) {
+      const hasCctv = !!data.cctvExistingSystem;
+      if (!hasCctv) sections.push({ name: "Seguridad Física / CCTV", status: "WARNING", message: "Sistema CCTV no especificado" });
+      else sections.push({ name: "Seguridad Física / CCTV", status: "OK", message: "Sistema CCTV documentado" });
+    }
+    if (!data.supType) sections.push({ name: "Soporte Técnico", status: "WARNING", message: "Tipo de soporte no especificado" });
+    else sections.push({ name: "Soporte Técnico", status: "OK", message: "Soporte técnico documentado" });
+    const criticals = sections.filter(s => s.status === "CRITICAL").length;
+    const warnings = sections.filter(s => s.status === "WARNING").length;
+    let status: DiagnosticResult["status"] = "APPLIES";
+    if (criticals > 0) status = "DOES_NOT_APPLY";
+    else if (warnings > 2) status = "APPLIES_WITH_OBSERVATIONS";
+    return { status, sections };
+  }
+
+  const diagnostic = computeDiagnostic();
+
+  const types = data.inspectionTypes;
+  const hasType = (t: string) => types.includes("ALL") || types.includes(t);
+  const showGeneral = types.length > 0;
+  const showEquipment = types.length > 0;
+  const showInfrastructure = types.length > 0 && !(types.length === 1 && types[0] === "TECH_SUPPORT");
+  const showSoftwareDev = hasType("SOFTWARE_DEV");
+  const showTelecom = hasType("TELECOM_NETWORK");
+  const showSoporte = hasType("TECH_SUPPORT");
+  const showSecurity = hasType("SECURITY_ELECTRONIC");
+  const showDescription = types.length > 0;
+  const showDiagnostic = types.length > 0;
+  const showFiles = types.length > 0;
+  const showSignatures = types.length > 0;
 
   async function runSpeedTest() {
     setSpeedTesting(true);
@@ -434,6 +583,7 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
         });
       } catch { uploadMbps = "N/A"; }
       setSpeedResult({ download: mbps, upload: uploadMbps, latency, connection: connLabel, isp, ip });
+      setData((prev) => ({ ...prev, speedDownload: mbps, speedUpload: uploadMbps, speedLatency: latency, speedConnectionType: connLabel, speedIsp: isp, speedIp: ip }));
       const val = parseFloat(mbps);
       let auto = "";
       if (val < 1) auto = "< 1Mbps";
@@ -456,6 +606,9 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
 
   useEffect(() => {
     fetch("/api/companies?limit=200").then((r) => r.json()).then((json) => setCompanies(json.data || json));
+    fetch("/api/auth/me").then((r) => r.json()).then((json) => {
+      if (json && !json.error) setLoggedUser({ name: json.name || null, docType: json.docType || null, docNumber: json.docNumber || null });
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -493,15 +646,23 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
     setData((prev) => ({ ...prev, [key]: value }));
   }
 
+  const ALL_TYPES = ["SOFTWARE_DEV", "TELECOM_NETWORK", "SECURITY_ELECTRONIC", "TECH_SUPPORT", "OTHER"];
+
   function toggleInspectionType(type: string) {
     setData((prev) => {
       const current = prev.inspectionTypes;
-      const updated = current.includes(type) ? current.filter((t) => t !== type) : [...current, type];
+      let updated: string[];
+      if (type === "ALL") {
+        updated = current.includes("ALL") ? [] : ["ALL", ...ALL_TYPES];
+      } else {
+        updated = current.includes(type) ? current.filter((t) => t !== type && t !== "ALL") : [...current.filter((t) => t !== "ALL"), type];
+        if (updated.length === ALL_TYPES.length) updated = ["ALL", ...ALL_TYPES];
+      }
       return { ...prev, inspectionTypes: updated, reportType: updated[0] || "TELECOM_NETWORK" };
     });
   }
 
-  async function handleUpload(files: FileList | null, field: "blueprints" | "photos") {
+  async function handleUpload(files: FileList | null, field: "blueprints" | "photos" | "videos" | "documents") {
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
@@ -522,7 +683,7 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
     }
   }
 
-  function removeFile(field: "blueprints" | "photos", index: number) {
+  function removeFile(field: "blueprints" | "photos" | "videos" | "documents", index: number) {
     update(field, (data[field] as { name: string; url: string; size: number; type: string }[]).filter((_, i) => i !== index));
   }
 
@@ -549,36 +710,151 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
     );
   }
 
-  async function handleSubmit() {
-    if (!data.companyId || data.inspectionTypes.length === 0) {
-      toast.error("Seleccione empresa y al menos un tipo de inspección");
-      return;
-    }
+  function buildPayload(statusOverride?: string) {
+    const company = companies.find((c) => c.id === Number(data.companyId));
+    const now = new Date();
+    const dateStr = `${now.getDate().toString().padStart(2, "0")}/${(now.getMonth() + 1).toString().padStart(2, "0")}/${now.getFullYear()}`;
+    const autoTitle = isEdit ? data.title : `Inspección - ${company?.name || "Empresa"} - ${dateStr}`;
+    return {
+      ...data,
+      inspectionTypes: data.inspectionTypes,
+      reportType: (data.inspectionTypes.includes("ALL") ? "OTHER" : data.inspectionTypes[0]) || "OTHER",
+      branchId: data.branchId || null,
+      title: autoTitle,
+      status: statusOverride || (isEdit ? data.status : "DRAFT"),
+      qualification: isEdit ? data.qualification : "PENDING",
+    };
+  }
+
+  async function saveReport(payload: Record<string, unknown>, isDraft = false) {
     setLoading(true);
     try {
-      const company = companies.find((c) => c.id === Number(data.companyId));
-      const now = new Date();
-      const dateStr = `${now.getDate().toString().padStart(2, "0")}/${(now.getMonth() + 1).toString().padStart(2, "0")}/${now.getFullYear()}`;
-      const autoTitle = isEdit ? data.title : `Inspección - ${company?.name || "Empresa"} - ${dateStr}`;
-      const payload = { ...data, inspectionTypes: data.inspectionTypes, reportType: data.inspectionTypes[0] || "TELECOM_NETWORK", branchId: data.branchId || null, title: autoTitle, status: isEdit ? data.status : "DRAFT", qualification: isEdit ? data.qualification : "PENDING" };
       const url = isEdit ? `/api/technical-reports/${existingData.id}` : "/api/technical-reports";
       const method = isEdit ? "PUT" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (res.ok) {
         const report = await res.json();
-        toast.success(isEdit ? "Inspección actualizada" : "Inspección creada");
+        toast.success(isDraft ? "Borrador guardado" : (isEdit ? "Inspección actualizada" : "Inspección creada"));
         router.push(`/technical-reports/${report.id}`);
       } else {
         const err = await res.json();
-        toast.error("Error al guardar inspección");
+        toast.error(err.error || "Error al guardar inspección");
       }
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleDelete() {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/technical-reports/${deleteId}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success("Inspección eliminada");
+        router.push("/technical-reports");
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Error al eliminar");
+      }
+    } finally {
+      setDeleting(false);
+      setDeleteId(null);
+    }
+  }
+
+  function handleDraft() {
+    if (!data.companyId || data.inspectionTypes.length === 0) {
+      toast.error("Seleccione empresa y al menos un tipo de inspección");
+      return;
+    }
+    saveReport(buildPayload("DRAFT"), true);
+  }
+
+  function getMissingFields(): string[] {
+    const missing: string[] = [];
+    const types = data.inspectionTypes;
+    const hasType = (t: string) => types.includes("ALL") || types.includes(t);
+    const showInfrastructure = types.length > 0 && !(types.length === 1 && types[0] === "TECH_SUPPORT");
+
+    const req = (label: string, val: unknown) => { if (!val || (typeof val === "string" && !val.trim())) missing.push(label); };
+
+    req("Nombre del Contacto", data.contactName);
+    req("Teléfono del Contacto", data.contactPhone);
+    req("Ubicación GPS", data.gmapUrl);
+
+    if (data.equipment.length === 0) missing.push("Al menos un equipo registrado");
+    else {
+      const noAplica = data.equipment.filter((e) => !e.applies);
+      if (noAplica.length === data.equipment.length) missing.push("Al menos un equipo debe aplicar");
+    }
+
+    if (showInfrastructure) {
+      req("Tipo de Conexión", data.connectionType);
+      req("Ancho de Banda", data.bandwidth);
+      req("Suministro Eléctrico", data.powerSupply);
+      req("Observaciones de Infraestructura", data.physicalSecurity);
+    }
+
+    if (hasType("SOFTWARE_DEV")) {
+      req("Tipo de Desarrollo", data.swDevType);
+      req("Plataforma", data.swDevPlatform);
+      req("Funcionalidades Requeridas", data.swDevFeatures);
+      req("Roles de Usuario", data.swDevUserRoles);
+      req("Tipo de Hosting", data.swDevHosting);
+      req("Base de Datos", data.swDevDatabase);
+      req("Requisitos de Diseño", data.swDevDesignReqs);
+      req("Requisitos de Seguridad", data.swDevSecurityReqs);
+      req("Presupuesto Estimado (SW)", data.swDevBudget);
+      req("Mantenimiento", data.swDevMaintenance);
+      req("Documentación", data.swDevDocumentation);
+    }
+
+    if (hasType("TELECOM_NETWORK")) {
+      req("Detalles Switch/Router", data.switchRouterDetails);
+      req("Requisitos UPS", data.upsRequirements);
+    }
+
+    if (hasType("TECH_SUPPORT")) {
+      req("Tipo de Soporte", data.supType);
+      req("Servicios Requeridos", data.supRequiredServices);
+      req("Expectativas del Cliente", data.supClientExpectations);
+      req("Rango de Presupuesto", data.supBudgetRange);
+      req("Duración del Contrato", data.supContractDuration);
+    }
+
+    if (hasType("SECURITY_ELECTRONIC")) {
+      req("Sistema Existente", data.secExistingSystem);
+      req("Tipo de Seguridad", data.secType);
+      req("Áreas a Cubrir", data.secAreasToCover);
+      req("Ubicación de Monitoreo", data.secMonitoringLocation);
+    }
+
+    req("Descripción / Contenido", data.content);
+    req("Hallazgos", data.findings);
+    req("Recomendaciones", data.recommendations);
+
+    req("Nombre del Cliente", data.clientName);
+    req("Cédula del Cliente", data.clientDocNumber);
+    req("Cargo del Cliente", data.clientPosition);
+    if (!data.technicianSignature) missing.push("Firma del Técnico");
+    if (!data.clientSignature) missing.push("Firma del Cliente");
+
+    return missing;
+  }
+
+  function handleSubmit() {
+    if (!data.companyId || data.inspectionTypes.length === 0) {
+      toast.error("Seleccione empresa y al menos un tipo de inspección");
+      return;
+    }
+    const missing = getMissingFields();
+    if (missing.length > 0) {
+      toast.error(`Faltan ${missing.length} campo(s) obligatorio(s):`, { duration: 8000 });
+      missing.forEach((f) => toast.warning(f, { duration: 6000 }));
+      return;
+    }
+    saveReport(buildPayload("SUBMITTED"));
   }
 
   const inputClass = "h-9 rounded-lg border border-navy-200 bg-white px-3 text-sm text-navy-900 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white";
@@ -588,18 +864,37 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isEdit ? "Editar Inspección" : "Nueva Inspección Técnica"}
+        title={isFinalized ? "Inspección Finalizada" : (isEdit ? "Editar Inspección" : "Nueva Inspección Técnica")}
         subtitle="Levantamiento de información en campo"
         actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" />Volver</Button>
-            <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              {isEdit ? "Actualizar" : "Crear Informe"}
-            </Button>
-          </div>
+          isFinalized ? (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" />Volver</Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" />Volver</Button>
+              <Button variant="outline" onClick={handleDraft} disabled={loading} className="gap-1.5">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Borrador
+              </Button>
+              <Button onClick={handleSubmit} disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {isEdit ? "Actualizar" : "Crear Informe"}
+              </Button>
+            </div>
+          )
         }
       />
+
+      {isFinalized && (
+        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-800 dark:bg-green-900/20">
+          <Lock className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <p className="text-sm font-medium text-green-700 dark:text-green-300">Esta inspección está finalizada. Solo puede visualizar o eliminar.</p>
+        </div>
+      )}
+
+      <div className={isFinalized ? "pointer-events-none select-none opacity-80" : ""}>
 
       {/* Basic Info */}
       <Card className="animate-fade-in-up relative z-[50]">
@@ -612,11 +907,17 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
                 {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </Select>
             </Field>
-            {branches.length > 0 && (
+            {data.companyId && (
               <Field label="Sucursal">
-                <Select value={data.branchId} onChange={(e) => update("branchId", e.target.value)} className={selectClass}>
-                  <option value="">Matriz (sin sucursal)</option>
-                  {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                <Select value={data.branchId} onChange={(e) => update("branchId", e.target.value)} className={selectClass} disabled={branches.length === 0}>
+                  {branches.length > 0 ? (
+                    <>
+                      <option value="">Matriz (sin sucursal)</option>
+                      {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </>
+                  ) : (
+                    <option value="">No hay sucursales</option>
+                  )}
                 </Select>
               </Field>
             )}
@@ -638,9 +939,12 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
             <Field label="Tipos de Inspección *">
               <TagInput
                 options={[
-                  { value: "TELECOM_NETWORK", label: "Red Telecomunicaciones" },
-                  { value: "ERP_INSTALLATION", label: "Instalación ERP" },
-                  { value: "SECURITY_CAMERAS", label: "Cámaras Seguridad" },
+                  { value: "ALL", label: "Todos" },
+                  { value: "SOFTWARE_DEV", label: "Software, Desarrollo Web o APP" },
+                  { value: "TELECOM_NETWORK", label: "Red de Telecomunicaciones" },
+                  { value: "SECURITY_ELECTRONIC", label: "Seguridad Electrónica" },
+                  { value: "TECH_SUPPORT", label: "Soporte Técnico" },
+                  { value: "OTHER", label: "Otro" },
                 ]}
                 value={data.inspectionTypes}
                 onChange={(v) => setData((prev) => ({ ...prev, inspectionTypes: v, reportType: v[0] || "" }))}
@@ -648,10 +952,31 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
               />
             </Field>
           </div>
+          {data.inspectionTypes.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[10px] text-navy-400 dark:text-white/30 mr-1">Secciones:</span>
+              {[
+                { show: showGeneral, label: "Contacto" },
+                { show: showEquipment, label: "Equipos" },
+                { show: showInfrastructure, label: "Infraestructura" },
+                { show: showSoftwareDev, label: "Software/Desarrollo" },
+                { show: showTelecom, label: "Red Telecomunicaciones" },
+                { show: showSecurity, label: "Seguridad Electrónica" },
+                { show: showSoporte, label: "Soporte Técnico" },
+                { show: showDescription, label: "Descripción" },
+                { show: showDiagnostic, label: "Diagnóstico" },
+                { show: showFiles, label: "Archivos" },
+                { show: showSignatures, label: "Firmas" },
+              ].filter(s => s.show).map(s => (
+                <span key={s.label} className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{s.label}</span>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Contact & Location */}
+      {showGeneral && (
       <Card className="animate-fade-in-up animate-delay-1">
         <CardContent className="space-y-4 py-5">
           <SectionTitle icon={Building2} title="Contacto y Ubicación" />
@@ -708,8 +1033,10 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Equipment */}
+      {showEquipment && (
       <Card className="animate-fade-in-up animate-delay-2">
         <CardContent className="space-y-4 py-5">
           <SectionTitle icon={Server} title="Equipos (Cajas, Servidores, Impresoras Fiscales)" />
@@ -760,6 +1087,7 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
           </Button>
         </CardContent>
       </Card>
+      )}
 
       {/* Equipment Form Modal */}
       {equipmentFormOpen && (
@@ -779,10 +1107,12 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
             setEquipmentFormOpen(false);
           }}
           onClose={() => setEquipmentFormOpen(false)}
+          inspectionTypes={data.inspectionTypes}
         />
       )}
 
       {/* Infrastructure */}
+      {showInfrastructure && (
       <Card className="animate-fade-in-up animate-delay-2">
         <CardContent className="space-y-4 py-5">
           <SectionTitle icon={Wifi} title="Infraestructura General" />
@@ -836,562 +1166,10 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
           </Field>
         </CardContent>
       </Card>
-
-      {/* Seguridad Física - CCTV */}
-      <Card className="animate-fade-in-up animate-delay-2">
-        <CardContent className="space-y-4 py-5">
-          <SectionTitle icon={Camera} title="Seguridad Física - CCTV" />
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Sistema CCTV Existente">
-              <Select value={data.cctvExistingSystem} onChange={(e) => update("cctvExistingSystem", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="NONE">No tiene sistema</option>
-                <option value="ANALOG">Analógico</option>
-                <option value="IP">IP / Digital</option>
-                <option value="HYBRID">Híbrido</option>
-                <option value="UNKNOWN">No sabe</option>
-              </Select>
-            </Field>
-            <Field label="Cantidad de Cámaras">
-              <Input type="number" value={data.cctvCameraCount} onChange={(e) => update("cctvCameraCount", e.target.value)} placeholder="0" className={inputClass} />
-            </Field>
-            <Field label="Tipo de Cámaras">
-              <Select value={data.cctvCameraType} onChange={(e) => update("cctvCameraType", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="DOME">Domo</option>
-                <option value="BULLET">Bala</option>
-                <option value="PTZ">PTZ</option>
-                <option value="TURRET">Torreta</option>
-                <option value="FISHEYE">Ojo de pez</option>
-                <option value="MULTIPLE">Múltiples tipos</option>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Field label="Resolución de Cámaras">
-              <Select value={data.cctvCameraResolution} onChange={(e) => update("cctvCameraResolution", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="720P">720P (HD)</option>
-                <option value="1080P">1080P (Full HD)</option>
-                <option value="2K">2K</option>
-                <option value="4K">4K (Ultra HD)</option>
-                <option value="ANALOG">Analógico (TVI/CVI/AHD)</option>
-              </Select>
-            </Field>
-            <Field label="Marca de Cámaras">
-              <Input value={data.cctvCameraBrand} onChange={(e) => update("cctvCameraBrand", e.target.value)} placeholder="Ej: Hikvision, Dahua" className={inputClass} />
-            </Field>
-            <Field label="Estado de Cámaras">
-              <Select value={data.cctvCameraCondition} onChange={(e) => update("cctvCameraCondition", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="EXCELLENT">Excelente</option>
-                <option value="GOOD">Bueno</option>
-                <option value="FAIR">Regular</option>
-                <option value="POOR">Malo</option>
-                <option value="DAMAGED">Dañado</option>
-                <option value="NONE">No tiene</option>
-              </Select>
-            </Field>
-            <div className="flex items-end gap-3">
-              <Switch id="night" checked={data.cctvNightVision} onChange={(e) => update("cctvNightVision", e.target.checked)} label="Visión Nocturna" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Field label="Marca DVR/NVR">
-              <Input value={data.cctvDvrNvrBrand} onChange={(e) => update("cctvDvrNvrBrand", e.target.value)} placeholder="Ej: Hikvision, Samsung" className={inputClass} />
-            </Field>
-            <Field label="Canales DVR/NVR">
-              <Select value={data.cctvDvrNvrChannels} onChange={(e) => update("cctvDvrNvrChannels", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="4">4 Canales</option>
-                <option value="8">8 Canales</option>
-                <option value="16">16 Canales</option>
-                <option value="32">32 Canales</option>
-                <option value="64">64 Canales</option>
-              </Select>
-            </Field>
-            <Field label="Almacenamiento">
-              <Select value={data.cctvStorageCapacity} onChange={(e) => update("cctvStorageCapacity", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="500GB">500GB</option>
-                <option value="1TB">1TB</option>
-                <option value="2TB">2TB</option>
-                <option value="4TB">4TB</option>
-                <option value="6TB">6TB</option>
-                <option value="8TB">8TB</option>
-                <option value="10TB">10TB+</option>
-              </Select>
-            </Field>
-            <Field label="Retención (días)">
-              <Select value={data.cctvRetentionDays} onChange={(e) => update("cctvRetentionDays", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="7">7 días</option>
-                <option value="15">15 días</option>
-                <option value="30">30 días</option>
-                <option value="60">60 días</option>
-                <option value="90">90 días</option>
-                <option value="180">180 días</option>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Tipo de Cableado">
-              <Select value={data.cctvCablingType} onChange={(e) => update("cctvCablingType", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="COAXIAL">Coaxial (RG59/RG6)</option>
-                <option value="CAT5E">CAT5e</option>
-                <option value="CAT6">CAT6</option>
-                <option value="CAT6A">CAT6A</option>
-                <option value="FIBER">Fibra Óptica</option>
-                <option value="WIRELESS">Inalámbrico</option>
-              </Select>
-            </Field>
-            <Field label="Longitud Estimada Cableado (m)">
-              <Input type="number" value={data.cctvCablingLength} onChange={(e) => update("cctvCablingLength", e.target.value)} placeholder="0" className={inputClass} />
-            </Field>
-            <Field label="Alimentación Eléctrica">
-              <Select value={data.cctvPowerSupply} onChange={(e) => update("cctvPowerSupply", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="POE">PoE (Power over Ethernet)</option>
-                <option value="AC_ADAPTER">Adaptador AC</option>
-                <option value="BATTERY">Batería / UPS</option>
-                <option value="SOLAR">Solar</option>
-                <option value="UNKNOWN">No sabe</option>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="flex items-end gap-3">
-              <Switch id="remote" checked={data.cctvRemoteAccess} onChange={(e) => update("cctvRemoteAccess", e.target.checked)} label="Acceso Remoto" />
-            </div>
-            <div className="flex items-end gap-3">
-              <Switch id="alarm" checked={data.cctvAlarmIntegration} onChange={(e) => update("cctvAlarmIntegration", e.target.checked)} label="Integración con Alarma" />
-            </div>
-            <div className="flex items-end gap-3">
-              <Switch id="access" checked={data.cctvAccessControl} onChange={(e) => update("cctvAccessControl", e.target.checked)} label="Control de Acceso" />
-            </div>
-          </div>
-
-          <Field label="Ubicación de Monitoreo">
-            <Input value={data.cctvMonitoringLocation} onChange={(e) => update("cctvMonitoringLocation", e.target.value)} placeholder="Ej: Sala de seguridad, recepción, oficina principal" className={inputClass} />
-          </Field>
-
-          <Field label="Áreas a Cubrir" className="w-full">
-            <textarea value={data.cctvAreasToCover} onChange={(e) => update("cctvAreasToCover", e.target.value)} placeholder="Ej: Estacionamiento, entrada principal, almacén, caja..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Áreas Ya Cubiertas" className="w-full">
-            <textarea value={data.cctvAreasCovered} onChange={(e) => update("cctvAreasCovered", e.target.value)} placeholder="Ej: Entrada principal, pasillo norte..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Puntos Ciegos Identificados" className="w-full">
-            <textarea value={data.cctvBlindSpots} onChange={(e) => update("cctvBlindSpots", e.target.value)} placeholder="Describa áreas sin cobertura o con visibilidad limitada..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Tipo de Instalación">
-              <Select value={data.cctvInstallationType} onChange={(e) => update("cctvInstallationType", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="NEW">Nueva Instalación</option>
-                <option value="EXPANSION">Expansión</option>
-                <option value="REPLACEMENT">Reemplazo</option>
-                <option value="MAINTENANCE">Mantenimiento</option>
-                <option value="REPAIR">Reparación</option>
-              </Select>
-            </Field>
-            <Field label="Condiciones de Iluminación">
-              <Select value={data.cctvLightingConditions} onChange={(e) => update("cctvLightingConditions", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="BRIGHT">Buena iluminación</option>
-                <option value="LOW">Poca iluminación</option>
-                <option value="VARIABLE">Variable (día/noche)</option>
-                <option value="DARK">Zona oscura</option>
-              </Select>
-            </Field>
-            <Field label="Exposición al Clima">
-              <Select value={data.cctvWeatherExposure} onChange={(e) => update("cctvWeatherExposure", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="INDOOR">Interior</option>
-                <option value="OUTDOOR">Exterior</option>
-                <option value="MIXED">Mixto</option>
-                <option value="EXTREME">Extremo (lluvia, polvo, calor)</option>
-              </Select>
-            </Field>
-          </div>
-
-          <Field label="Lugares de Montaje" className="w-full">
-            <textarea value={data.cctvMountingLocations} onChange={(e) => update("cctvMountingLocations", e.target.value)} placeholder="Ej: Paredes, techo, postes, esquinas..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Ancho de Banda de Red Requerido">
-            <Select value={data.cctvNetworkBandwidth} onChange={(e) => update("cctvNetworkBandwidth", e.target.value)} className={selectClass}>
-              <option value="">Seleccionar</option>
-              <option value="LOW">Bajo (&lt; 10 Mbps)</option>
-              <option value="MEDIUM">Medio (10-50 Mbps)</option>
-              <option value="HIGH">Alto (50-100 Mbps)</option>
-              <option value="VERY_HIGH">Muy alto (&gt; 100 Mbps)</option>
-            </Select>
-          </Field>
-
-          <Field label="Notas Adicionales sobre Seguridad" className="w-full">
-            <textarea value={data.cctvAdditionalNotes} onChange={(e) => update("cctvAdditionalNotes", e.target.value)} placeholder="Cualquier información adicional relevante sobre el sistema de seguridad..." className={textareaClass + " min-h-[100px] w-full"} />
-          </Field>
-        </CardContent>
-      </Card>
-
-      {/* Desarrollo de Software */}
-      <Card className="animate-fade-in-up animate-delay-2">
-        <CardContent className="space-y-4 py-5">
-          <SectionTitle icon={Code} title="Desarrollo de Software, Web o APP" />
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Tipo de Desarrollo Requerido">
-              <Select value={data.swDevType} onChange={(e) => update("swDevType", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="WEB">Aplicación Web</option>
-                <option value="MOBILE">Aplicación Móvil</option>
-                <option value="DESKTOP">Aplicación de Escritorio</option>
-                <option value="API">API / Backend</option>
-                <option value="ECOMMERCE">E-Commerce / Tienda Online</option>
-                <option value="CMS">Sistema CMS / Intranet</option>
-                <option value="ERP_CUSTOM">Módulo ERP Personalizado</option>
-                <option value="INTEGRATION">Integración de Sistemas</option>
-                <option value="OTHER">Otro</option>
-              </Select>
-            </Field>
-            <Field label="Sistema Actual">
-              <Select value={data.swCurrentSystem} onChange={(e) => update("swCurrentSystem", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="NONE">No tiene sistema actual</option>
-                <option value="LEGACY">Sistema legado / antiguo</option>
-                <option value="BASIC">Sistema básico (Excel, planillas)</option>
-                <option value="CUSTOM">Sistema personalizado</option>
-                <option value="SAAS">Software SaaS ( Salesforce, etc.)</option>
-                <option value="OPEN_SOURCE">Software de código abierto</option>
-              </Select>
-            </Field>
-            <Field label="Tecnologías Actuales">
-              <Input value={data.swCurrentTech} onChange={(e) => update("swCurrentTech", e.target.value)} placeholder="Ej: PHP, Laravel, MySQL, React" className={inputClass} />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Sitio Web Actual" className="w-full">
-              <textarea value={data.swCurrentWebsite} onChange={(e) => update("swCurrentWebsite", e.target.value)} placeholder="Describa el sitio web actual, funcionalidades, tecnología utilizada..." className={textareaClass + " min-h-[80px] w-full"} />
-            </Field>
-            <Field label="Aplicación Móvil Actual" className="w-full">
-              <textarea value={data.swCurrentApp} onChange={(e) => update("swCurrentApp", e.target.value)} placeholder="Describa la app actual, plataforma (iOS/Android), funcionalidades..." className={textareaClass + " min-h-[80px] w-full"} />
-            </Field>
-          </div>
-
-          <Field label="Software Actual / Sistemas Existentes" className="w-full">
-            <textarea value={data.swCurrentSoftware} onChange={(e) => update("swCurrentSoftware", e.target.value)} placeholder="Describa todos los sistemas de software que utiliza actualmente el cliente (contabilidad, inventario, RRHH, facturación, etc.)..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Problemas o Limitaciones Actuales" className="w-full">
-            <textarea value={data.swCurrentIssues} onChange={(e) => update("swCurrentIssues", e.target.value)} placeholder="Describa los problemas, limitaciones o necesidades que enfrenta el cliente con sus sistemas actuales..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Tipo de Desarrollo Esperado">
-              <Select value={data.swRequiredType} onChange={(e) => update("swRequiredType", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="NEW_BUILD">Desarrollo desde cero</option>
-                <option value="REDESIGN">Rediseño completo</option>
-                <option value="FEATURE_ADD">Agregar funcionalidades</option>
-                <option value="MIGRATION">Migración de sistema</option>
-                <option value="MAINTENANCE">Mantenimiento / Soporte</option>
-                <option value="CONSULTING">Consultoría técnica</option>
-              </Select>
-            </Field>
-            <Field label="Cantidad de Usuarios Esperados">
-              <Input type="number" value={data.swTargetUsers} onChange={(e) => update("swTargetUsers", e.target.value)} placeholder="0" className={inputClass} />
-            </Field>
-            <Field label="Roles de Usuario">
-              <Input value={data.swUserRoles} onChange={(e) => update("swUserRoles", e.target.value)} placeholder="Ej: Admin, Vendedor, Gerente" className={inputClass} />
-            </Field>
-          </div>
-
-          <Field label="Funcionalidades Requeridas" className="w-full">
-            <textarea value={data.swRequiredFeatures} onChange={(e) => update("swRequiredFeatures", e.target.value)} placeholder="Liste las funcionalidades principales que necesita: login, dashboard, reportes, facturación, inventario, notificaciones, chat, etc." className={textareaClass + " min-h-[100px] w-full"} />
-          </Field>
-
-          <Field label="Módulos o Secciones Requeridas" className="w-full">
-            <textarea value={data.swRequiredModules} onChange={(e) => update("swRequiredModules", e.target.value)} placeholder="Liste los módulos o secciones del sistema: Dashboard, Usuarios, Clientes, Productos, Ventas, Compras, Contabilidad, RRHH, etc." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Integraciones Necesarias" className="w-full">
-            <textarea value={data.swIntegrationNeeds} onChange={(e) => update("swIntegrationNeeds", e.target.value)} placeholder="Ej: Pasarela de pago (PayPal, Stripe), API bancaria, WhatsApp Business, correo electrónico, GPS, etc." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Tipo de Hosting Requerido">
-              <Select value={data.swHostingType} onChange={(e) => update("swHostingType", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="SHARED">Hosting Compartido</option>
-                <option value="VPS">VPS / Servidor Virtual</option>
-                <option value="DEDICATED">Servidor Dedicado</option>
-                <option value="CLOUD">Cloud (AWS, Azure, GCP)</option>
-                <option value="LOCAL">Servidor Local / On-Premise</option>
-                <option value="NONE">No requiere</option>
-              </Select>
-            </Field>
-            <Field label="Estado del Dominio">
-              <Select value={data.swDomainStatus} onChange={(e) => update("swDomainStatus", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="HAS">Ya tiene dominio registrado</option>
-                <option value="NEEDS">Necesita registrar dominio</option>
-                <option value="TRANSFER">Necesita transferir dominio</option>
-                <option value="NONE">No requiere dominio</option>
-              </Select>
-            </Field>
-            <Field label="Nombre de Dominio">
-              <Input value={data.swDomainName} onChange={(e) => update("swDomainName", e.target.value)} placeholder="Ej: mipagina.com" className={inputClass} />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Presupuesto Estimado">
-              <Select value={data.swBudget} onChange={(e) => update("swBudget", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="UNDER_1000">Menos de $1,000</option>
-                <option value="1000_5000">$1,000 - $5,000</option>
-                <option value="5000_10000">$5,000 - $10,000</option>
-                <option value="10000_25000">$10,000 - $25,000</option>
-                <option value="25000_50000">$25,000 - $50,000</option>
-                <option value="OVER_50000">Más de $50,000</option>
-                <option value="UNDEFINED">A definir</option>
-              </Select>
-            </Field>
-            <Field label="Tiempo Esperado de Entrega">
-              <Select value={data.swTimeline} onChange={(e) => update("swTimeline", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="URGENT">Urgente (1-2 semanas)</option>
-                <option value="SHORT">Corto plazo (1 mes)</option>
-                <option value="MEDIUM">Medio plazo (2-3 meses)</option>
-                <option value="LONG">Largo plazo (6+ meses)</option>
-                <option value="FLEXIBLE">Flexible</option>
-              </Select>
-            </Field>
-            <Field label="Necesidades de Mantenimiento">
-              <Select value={data.swMaintenanceNeeds} onChange={(e) => update("swMaintenanceNeeds", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="NONE">No requiere</option>
-                <option value="BASIC">Básico (actualizaciones menores)</option>
-                <option value="REGULAR">Regular (soporte mensual)</option>
-                <option value="COMPREHENSIVE">Integral (soporte 24/7)</option>
-              </Select>
-            </Field>
-          </div>
-
-          <Field label="Requisitos de Seguridad" className="w-full">
-            <textarea value={data.swSecurityNeeds} onChange={(e) => update("swSecurityNeeds", e.target.value)} placeholder="Ej: Autenticación de dos factores, encriptación SSL, respaldos automáticos, control de acceso por roles, auditoría de acciones..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Necesidades de Capacitación" className="w-full">
-            <textarea value={data.swTrainingNeeds} onChange={(e) => update("swTrainingNeeds", e.target.value)} placeholder="Describa si el personal requiere capacitación, tipo de capacitación, usuarios objetivo..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Notas Adicionales sobre Desarrollo" className="w-full">
-            <textarea value={data.swAdditionalNotes} onChange={(e) => update("swAdditionalNotes", e.target.value)} placeholder="Cualquier información adicional relevante sobre el desarrollo de software..." className={textareaClass + " min-h-[100px] w-full"} />
-          </Field>
-        </CardContent>
-      </Card>
-
-      {/* Redes de Telecomunicaciones */}
-      <Card className="animate-fade-in-up animate-delay-2">
-        <CardContent className="space-y-4 py-5">
-          <SectionTitle icon={Network} title="Redes de Telecomunicaciones" />
-
-          <p className="text-xs text-gray-400 dark:text-white/40">Situación Actual de la Red</p>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Topología de Red Actual">
-              <Select value={data.netCurrentTopology} onChange={(e) => update("netCurrentTopology", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="STAR">Estrella</option>
-                <option value="BUS">Bus</option>
-                <option value="RING">Anillo</option>
-                <option value="MESH">Malla</option>
-                <option value="TREE">Árbol</option>
-                <option value="HYBRID">Híbrida</option>
-                <option value="NONE">No tiene red</option>
-              </Select>
-            </Field>
-            <Field label="Ancho de Banda Actual">
-              <Select value={data.netCurrentBandwidth} onChange={(e) => update("netCurrentBandwidth", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="< 1Mbps">&lt; 1Mbps</option>
-                <option value="1-5Mbps">1-5 Mbps</option>
-                <option value="5-10Mbps">5-10 Mbps</option>
-                <option value="10-50Mbps">10-50 Mbps</option>
-                <option value="50-100Mbps">50-100 Mbps</option>
-                <option value="100-300Mbps">100-300 Mbps</option>
-                <option value="300-1Gbps">300 Mbps - 1 Gbps</option>
-                <option value="> 1Gbps">&gt; 1 Gbps</option>
-              </Select>
-            </Field>
-            <Field label="ISP Actual">
-              <Input value={data.netCurrentIsp} onChange={(e) => update("netCurrentIsp", e.target.value)} placeholder="Ej: CANTV, Movistar, Telcel" className={inputClass} />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Router Actual">
-              <Input value={data.netCurrentRouter} onChange={(e) => update("netCurrentRouter", e.target.value)} placeholder="Marca, modelo, cantidad" className={inputClass} />
-            </Field>
-            <Field label="Switches Actuales">
-              <Input value={data.netCurrentSwitch} onChange={(e) => update("netCurrentSwitch", e.target.value)} placeholder="Marca, modelo, puertos" className={inputClass} />
-            </Field>
-            <Field label="Firewall / Seguridad">
-              <Input value={data.netCurrentFirewall} onChange={(e) => update("netCurrentFirewall", e.target.value)} placeholder="Marca, modelo" className={inputClass} />
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Access Points WiFi Actuales">
-              <Input value={data.netCurrentWifiAp} onChange={(e) => update("netCurrentWifiAp", e.target.value)} placeholder="Marca, modelo, cantidad, cobertura" className={inputClass} />
-            </Field>
-            <Field label="Cableado Actual">
-              <Select value={data.netCurrentCabling} onChange={(e) => update("netCurrentCabling", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="CAT5">CAT5</option>
-                <option value="CAT5E">CAT5e</option>
-                <option value="CAT6">CAT6</option>
-                <option value="CAT6A">CAT6A</option>
-                <option value="CAT7">CAT7</option>
-                <option value="FIBER">Fibra Óptica</option>
-                <option value="MIXED">Mixto</option>
-                <option value="UNKNOWN">No sabe</option>
-              </Select>
-            </Field>
-          </div>
-
-          <Field label="Sala de Servidores / Rack" className="w-full">
-            <textarea value={data.netCurrentServerRoom} onChange={(e) => update("netCurrentServerRoom", e.target.value)} placeholder="Describa la sala de servidores, rack, estado, climatización, energía, acceso..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Problemas o Limitaciones de Red Actuales" className="w-full">
-            <textarea value={data.netCurrentIssues} onChange={(e) => update("netCurrentIssues", e.target.value)} placeholder="Describa los problemas actuales: caídas, lentitud, puntos ciegos WiFi, cableado deteriorado, etc." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <div className="border-t border-gray-200 dark:border-white/[0.06] pt-4">
-            <p className="text-xs text-gray-400 dark:text-white/40 mb-3">Requerimientos y Necesidades</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Topología Requerida">
-              <Select value={data.netRequiredTopology} onChange={(e) => update("netRequiredTopology", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="STAR">Estrella</option>
-                <option value="MESH">Malla</option>
-                <option value="TREE">Árbol</option>
-                <option value="HYBRID">Híbrida</option>
-                <option value="NO_CHANGE">Sin cambios</option>
-              </Select>
-            </Field>
-            <Field label="Ancho de Banda Requerido">
-              <Select value={data.netRequiredBandwidth} onChange={(e) => update("netRequiredBandwidth", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="< 1Mbps">&lt; 1Mbps</option>
-                <option value="1-5Mbps">1-5 Mbps</option>
-                <option value="5-10Mbps">5-10 Mbps</option>
-                <option value="10-50Mbps">10-50 Mbps</option>
-                <option value="50-100Mbps">50-100 Mbps</option>
-                <option value="100-300Mbps">100-300 Mbps</option>
-                <option value="300-1Gbps">300 Mbps - 1 Gbps</option>
-                <option value="> 1Gbps">&gt; 1 Gbps</option>
-              </Select>
-            </Field>
-          </div>
-
-          <Field label="Equipamiento Requerido" className="w-full">
-            <textarea value={data.netRequiredEquipment} onChange={(e) => update("netRequiredEquipment", e.target.value)} placeholder="Ej: Router principal, switches manageables, access points WiFi 6, firewall, servidor NAS..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Cableado Requerido">
-              <Select value={data.netRequiredCabling} onChange={(e) => update("netRequiredCabling", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="CAT5E">CAT5e</option>
-                <option value="CAT6">CAT6</option>
-                <option value="CAT6A">CAT6A</option>
-                <option value="CAT7">CAT7</option>
-                <option value="FIBER">Fibra Óptica</option>
-                <option value="NO_CHANGE">Sin cambios</option>
-              </Select>
-            </Field>
-            <Field label="Cobertura WiFi Requerida">
-              <Select value={data.netWifiCoverage} onChange={(e) => update("netWifiCoverage", e.target.value)} className={selectClass}>
-                <option value="">Seleccionar</option>
-                <option value="FULL">Cobertura total</option>
-                <option value="PARTIAL">Cobertura parcial</option>
-                <option value="CRITICAL">Zonas críticas</option>
-                <option value="NONE">No requiere</option>
-              </Select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-            <div className="flex items-end gap-3">
-              <Switch id="vpn" checked={data.netRequiredVpn} onChange={(e) => update("netRequiredVpn", e.target.checked)} label="VPN / Acceso Remoto" />
-            </div>
-            <div className="flex items-end gap-3">
-              <Switch id="wifi" checked={data.netRequiredWifi} onChange={(e) => update("netRequiredWifi", e.target.checked)} label="WiFi Nuevo" />
-            </div>
-            <div className="flex items-end gap-3">
-              <Switch id="voip" checked={data.netRequiredVoip} onChange={(e) => update("netRequiredVoip", e.target.checked)} label="VoIP / Telefonía" />
-            </div>
-            <div className="flex items-end gap-3">
-              <Switch id="netbackup" checked={data.netRequiredBackup} onChange={(e) => update("netRequiredBackup", e.target.checked)} label="Respaldo de Red" />
-            </div>
-            <div className="flex items-end gap-3">
-              <Switch id="monitor" checked={data.netRequiredMonitoring} onChange={(e) => update("netRequiredMonitoring", e.target.checked)} label="Monitoreo de Red" />
-            </div>
-          </div>
-
-          <Field label="Seguridad de Red Requerida" className="w-full">
-            <textarea value={data.netRequiredSecurity} onChange={(e) => update("netRequiredSecurity", e.target.value)} placeholder="Ej: Firewall, IDS/IPS, filtrado de contenido, segmentación de red, control de acceso por MAC..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Zonas WiFi Requeridas" className="w-full">
-            <textarea value={data.netWifiZones} onChange={(e) => update("netWifiZones", e.target.value)} placeholder="Ej: Oficina principal, almacén, área de producción, recepción, salas de reunión..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Necesidades de VLAN / Segmentación" className="w-full">
-            <textarea value={data.netVlanNeeds} onChange={(e) => update("netVlanNeeds", e.target.value)} placeholder="Ej: VLAN para cámaras, VLAN para VoIP, VLAN para invitados, VLAN para administración..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Acceso Remoto / VPN Requerido" className="w-full">
-            <textarea value={data.netRemoteAccessNeeds} onChange={(e) => update("netRemoteAccessNeeds", e.target.value)} placeholder="Ej: VPN site-to-site, VPN para usuarios remotos, acceso por IP pública, etc." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Estrategia de Respaldo Requerida" className="w-full">
-            <textarea value={data.netBackupStrategy} onChange={(e) => update("netBackupStrategy", e.target.value)} placeholder="Ej: Respaldo a la nube, NAS local, duplicación de configuraciones de red, UPS para equipo de red..." className={textareaClass + " min-h-[80px] w-full"} />
-          </Field>
-
-          <Field label="Mantenimiento de Red Requerido">
-            <Select value={data.netMaintenanceNeeds} onChange={(e) => update("netMaintenanceNeeds", e.target.value)} className={selectClass}>
-              <option value="">Seleccionar</option>
-              <option value="NONE">No requiere</option>
-              <option value="BASIC">Básico (actualizaciones de firmware)</option>
-              <option value="REGULAR">Regular (soporte mensual)</option>
-              <option value="COMPREHENSIVE">Integral (soporte 24/7)</option>
-            </Select>
-          </Field>
-
-          <Field label="Notas Adicionales sobre Redes" className="w-full">
-            <textarea value={data.netAdditionalNotes} onChange={(e) => update("netAdditionalNotes", e.target.value)} placeholder="Cualquier información adicional relevante sobre la red de telecomunicaciones..." className={textareaClass + " min-h-[100px] w-full"} />
-          </Field>
-        </CardContent>
-      </Card>
+      )}
 
       {/* Soporte Técnico */}
+      {showSoporte && (
       <Card className="animate-fade-in-up animate-delay-2">
         <CardContent className="space-y-4 py-5">
           <SectionTitle icon={Shield} title="Soporte Técnico" />
@@ -1582,9 +1360,166 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
           </Field>
         </CardContent>
       </Card>
+      )}
+
+      {/* Seguridad Electrónica - Conditional */}
+      {showSecurity && (
+        <Card className="animate-fade-in-up animate-delay-3">
+          <CardContent className="space-y-4 py-5">
+            <SectionTitle icon={Shield} title="Seguridad Electrónica" />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Sistema Actual">
+                <Select value={data.secExistingSystem} onChange={(e) => update("secExistingSystem", e.target.value)} className={selectClass}>
+                  <option value="">Seleccionar</option>
+                  <option value="NONE">No tiene sistema</option>
+                  <option value="ANALOG">Analógico</option>
+                  <option value="IP">IP / Digital</option>
+                  <option value="HYBRID">Híbrido</option>
+                  <option value="UNKNOWN">No sabe</option>
+                </Select>
+              </Field>
+              <Field label="Tipo de Seguridad">
+                <Select value={data.secType} onChange={(e) => update("secType", e.target.value)} className={selectClass}>
+                  <option value="">Seleccionar</option>
+                  <option value="CCTV">CCTV / Videovigilancia</option>
+                  <option value="ALARMS">Sistemas de Alarma</option>
+                  <option value="ACCESS_CONTROL">Control de Acceso</option>
+                  <option value="COMBINED">Combinado (CCTV + Alarma + Acceso)</option>
+                  <option value="FIRE">Detección de Incendios</option>
+                  <option value="OTHER">Otro</option>
+                </Select>
+              </Field>
+              <Field label="Ubicación del Monitoreo">
+                <Input value={data.secMonitoringLocation} onChange={(e) => update("secMonitoringLocation", e.target.value)} placeholder="Ej: Recepción, Sala de control..." className={inputClass} />
+              </Field>
+            </div>
+
+            {/* Cámaras */}
+            <div className="rounded-xl border border-navy-100 bg-navy-50/50 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="mb-3 text-xs font-semibold text-blue-600 dark:text-blue-400">Cámaras</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <Field label="Cantidad de Cámaras">
+                  <Input type="number" value={data.secCameraCount} onChange={(e) => update("secCameraCount", e.target.value)} placeholder="0" className={inputClass} />
+                </Field>
+                <Field label="Tipo de Cámara">
+                  <Select value={data.secCameraType} onChange={(e) => update("secCameraType", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="DOME">Domo</option>
+                    <option value="BULLET">Bala</option>
+                    <option value="PTZ">PTZ</option>
+                    <option value="TURRET">Torreta</option>
+                    <option value="FISHEYE">Ojo de Pez</option>
+                    <option value="OTHER">Otro</option>
+                  </Select>
+                </Field>
+                <Field label="Resolución">
+                  <Select value={data.secCameraResolution} onChange={(e) => update("secCameraResolution", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="720P">720P</option>
+                    <option value="1080P">1080P Full HD</option>
+                    <option value="2K">2K / 4MP</option>
+                    <option value="4K">4K / 8MP</option>
+                    <option value="ANALOG">Analógico</option>
+                  </Select>
+                </Field>
+                <Field label="Marca">
+                  <Input value={data.secCameraBrand} onChange={(e) => update("secCameraBrand", e.target.value)} placeholder="Ej: Hikvision, Dahua..." className={inputClass} />
+                </Field>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Field label="Estado Físico">
+                  <Select value={data.secCameraCondition} onChange={(e) => update("secCameraCondition", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="EXCELLENT">Excelente</option>
+                    <option value="GOOD">Bueno</option>
+                    <option value="FAIR">Regular</option>
+                    <option value="POOR">Malo</option>
+                    <option value="NOT_WORKING">No funciona</option>
+                  </Select>
+                </Field>
+                <div className="flex items-center gap-3 pt-5">
+                  <Switch id="secNight" checked={data.secNightVision} onChange={(e) => update("secNightVision", e.target.checked)} label="Visión Nocturna" />
+                </div>
+                <Field label="Almacenamiento (días)">
+                  <Input type="number" value={data.secStorageDays} onChange={(e) => update("secStorageDays", e.target.value)} placeholder="30" className={inputClass} />
+                </Field>
+              </div>
+            </div>
+
+            {/* DVR/NVR y Cableado */}
+            <div className="rounded-xl border border-navy-100 bg-navy-50/50 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="mb-3 text-xs font-semibold text-blue-600 dark:text-blue-400">DVR/NVR y Cableado</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <Field label="Tipo DVR/NVR">
+                  <Select value={data.secDvrNvrType} onChange={(e) => update("secDvrNvrType", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="DVR">DVR (Analógico)</option>
+                    <option value="NVR">NVR (IP)</option>
+                    <option value="XVR">XVR (Híbrido)</option>
+                    <option value="NONE">No tiene</option>
+                  </Select>
+                </Field>
+                <Field label="Marca DVR/NVR">
+                  <Input value={data.secDvrNvrBrand} onChange={(e) => update("secDvrNvrBrand", e.target.value)} placeholder="Marca" className={inputClass} />
+                </Field>
+                <Field label="Tipo de Cableado">
+                  <Select value={data.secCablingType} onChange={(e) => update("secCablingType", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="COAXIAL">Coaxial</option>
+                    <option value="UTP">UTP / Cat5e / Cat6</option>
+                    <option value="FIBER">Fibra Óptica</option>
+                    <option value="WIRELESS">Inalámbrico</option>
+                    <option value="MIXED">Mixto</option>
+                  </Select>
+                </Field>
+                <Field label="Fuente de Alimentación">
+                  <Select value={data.secPowerSupply} onChange={(e) => update("secPowerSupply", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="POE">PoE</option>
+                    <option value="ADAPTER">Adaptador / Fuente externa</option>
+                    <option value="UPS">UPS dedicado</option>
+                    <option value="BATTERY">Batería</option>
+                  </Select>
+                </Field>
+              </div>
+            </div>
+
+            {/* Cobertura */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Áreas por Cubrir">
+                <textarea value={data.secAreasToCover} onChange={(e) => update("secAreasToCover", e.target.value)} placeholder="Entradas, estacionamiento, almacén, caja..." className={textareaClass + " min-h-[80px]"} />
+              </Field>
+              <Field label="Áreas Cubiertas">
+                <textarea value={data.secAreasCovered} onChange={(e) => update("secAreasCovered", e.target.value)} placeholder="Áreas que ya tienen cobertura..." className={textareaClass + " min-h-[80px]"} />
+              </Field>
+              <Field label="Puntos Ciegos">
+                <textarea value={data.secBlindSpots} onChange={(e) => update("secBlindSpots", e.target.value)} placeholder="Zonas sin cobertura actualmente..." className={textareaClass + " min-h-[80px]"} />
+              </Field>
+            </div>
+
+            {/* Integraciones */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="flex items-center gap-3 pt-5">
+                <Switch id="secRemote" checked={data.secRemoteAccess} onChange={(e) => update("secRemoteAccess", e.target.checked)} label="Acceso Remoto" />
+              </div>
+              <div className="flex items-center gap-3 pt-5">
+                <Switch id="secAlarm" checked={data.secAlarmIntegration} onChange={(e) => update("secAlarmIntegration", e.target.checked)} label="Integración con Alarma" />
+              </div>
+              <div className="flex items-center gap-3 pt-5">
+                <Switch id="secAccess" checked={data.secAccessControl} onChange={(e) => update("secAccessControl", e.target.checked)} label="Control de Acceso" />
+              </div>
+            </div>
+
+            <Field label="Notas Adicionales" className="w-full">
+              <textarea value={data.secAdditionalNotes} onChange={(e) => update("secAdditionalNotes", e.target.value)} placeholder="Cualquier información adicional sobre seguridad electrónica..." className={textareaClass + " min-h-[80px] w-full"} />
+            </Field>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Telecom Network - Conditional */}
-      {data.inspectionTypes.includes("TELECOM_NETWORK") && (
+      {showTelecom && (
         <Card className="animate-fade-in-up animate-delay-3">
           <CardContent className="space-y-4 py-5">
             <SectionTitle icon={Network} title="Red de Telecomunicaciones" />
@@ -1624,176 +1559,537 @@ export default function TechnicalReportForm({ existingData }: { existingData?: R
                 </Select>
               </Field>
             </div>
-            <Field label="Detalles Switch/Router">
-              <textarea value={data.switchRouterDetails} onChange={(e) => update("switchRouterDetails", e.target.value)} placeholder="Modelos, puertos, configuración..." className={textareaClass} />
+            <Field label="Detalles Switch/Router" className="w-full">
+              <textarea value={data.switchRouterDetails} onChange={(e) => update("switchRouterDetails", e.target.value)} placeholder="Modelos, puertos, configuración..." className={textareaClass + " min-h-[100px] w-full"} />
             </Field>
-            <Field label="Requisitos UPS">
-              <textarea value={data.upsRequirements} onChange={(e) => update("upsRequirements", e.target.value)} placeholder="Capacidad, autonomía, marca..." className={textareaClass} />
+            <Field label="Requisitos UPS" className="w-full">
+              <textarea value={data.upsRequirements} onChange={(e) => update("upsRequirements", e.target.value)} placeholder="Capacidad, autonomía, marca..." className={textareaClass + " min-h-[100px] w-full"} />
             </Field>
           </CardContent>
         </Card>
       )}
 
-      {/* ERP Installation - Conditional */}
-      {data.inspectionTypes.includes("ERP_INSTALLATION") && (
+      {/* Software Dev - Conditional */}
+      {showSoftwareDev && (
         <Card className="animate-fade-in-up animate-delay-3">
           <CardContent className="space-y-4 py-5">
-            <SectionTitle icon={Server} title="Instalación ERP" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="Sistemas Actuales">
-                <textarea value={data.currentSystems} onChange={(e) => update("currentSystems", e.target.value)} placeholder="Software actual, planillas, contabilidad..." className={textareaClass} />
-              </Field>
-              <Field label="Módulos Necesarios">
-                <textarea value={data.erpModules} onChange={(e) => update("erpModules", e.target.value)} placeholder="Inventario, contabilidad, RRHH, ventas..." className={textareaClass} />
-              </Field>
-            </div>
+            <SectionTitle icon={Code} title="Desarrollo de Software, Web o APP" />
+
+            {/* Tipo de Proyecto */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Tipo de Proyecto *">
+                <Select value={data.swDevType} onChange={(e) => update("swDevType", e.target.value)} className={selectClass}>
+                  <option value="">Seleccionar</option>
+                  <option value="WEB">Sitio Web</option>
+                  <option value="WEB_APP">Aplicación Web</option>
+                  <option value="MOBILE_IOS">App Móvil iOS</option>
+                  <option value="MOBILE_ANDROID">App Móvil Android</option>
+                  <option value="MOBILE_BOTH">App Móvil (iOS + Android)</option>
+                  <option value="DESKTOP">Aplicación de Escritorio</option>
+                  <option value="API">API / Servicio</option>
+                  <option value="FULL_SYSTEM">Sistema Completo</option>
+                  <option value="OTHER">Otro</option>
+                </Select>
+              </Field>
+              <Field label="Plataforma / Tecnología">
+                <Select value={data.swDevPlatform} onChange={(e) => update("swDevPlatform", e.target.value)} className={selectClass}>
+                  <option value="">Seleccionar</option>
+                  <option value="REACT">React / Next.js</option>
+                  <option value="VUE">Vue.js / Nuxt</option>
+                  <option value="ANGULAR">Angular</option>
+                  <option value="FLUTTER">Flutter</option>
+                  <option value="REACT_NATIVE">React Native</option>
+                  <option value="NODE">Node.js</option>
+                  <option value="PHP">PHP / Laravel</option>
+                  <option value="PYTHON">Python / Django / Flask</option>
+                  <option value="DOTNET">.NET / C#</option>
+                  <option value="JAVA">Java / Spring</option>
+                  <option value="WORDPRESS">WordPress</option>
+                  <option value="SHOPIFY">Shopify</option>
+                  <option value="OTHER">Otro</option>
+                </Select>
+              </Field>
               <Field label="Cantidad de Usuarios">
                 <Input type="number" value={data.erpUsers} onChange={(e) => update("erpUsers", e.target.value)} placeholder="0" className={inputClass} />
               </Field>
-              <Field label="Expectativa de Tiempo">
+            </div>
+
+            {/* Requerimientos Funcionales */}
+            <div className="rounded-xl border border-navy-100 bg-navy-50/50 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="mb-3 text-xs font-semibold text-blue-600 dark:text-blue-400">Requerimientos Funcionales</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Sistemas Actuales">
+                  <textarea value={data.currentSystems} onChange={(e) => update("currentSystems", e.target.value)} placeholder="Software actual, plataformas, tecnologías en uso..." className={textareaClass + " min-h-[80px]"} />
+                </Field>
+                <Field label="Módulos / Funcionalidades Necesarias">
+                  <textarea value={data.swDevFeatures} onChange={(e) => update("swDevFeatures", e.target.value)} placeholder="Módulos, funcionalidades, features requeridas..." className={textareaClass + " min-h-[80px]"} />
+                </Field>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Field label="Roles de Usuario">
+                  <textarea value={data.swDevUserRoles} onChange={(e) => update("swDevUserRoles", e.target.value)} placeholder="Admin, usuario, cliente, vendedor..." className={textareaClass} />
+                </Field>
+                <Field label="Integraciones Requeridas">
+                  <textarea value={data.swDevIntegrations} onChange={(e) => update("swDevIntegrations", e.target.value)} placeholder="APIs, pasarelas de pago, ERPs, CRMs..." className={textareaClass} />
+                </Field>
+              </div>
+            </div>
+
+            {/* Infraestructura Técnica */}
+            <div className="rounded-xl border border-navy-100 bg-navy-50/50 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="mb-3 text-xs font-semibold text-blue-600 dark:text-blue-400">Infraestructura Técnica</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Field label="Tipo de Hosting">
+                  <Select value={data.swDevHosting} onChange={(e) => update("swDevHosting", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="CLOUD_AWS">AWS</option>
+                    <option value="CLOUD_AZURE">Azure</option>
+                    <option value="CLOUD_GCP">Google Cloud</option>
+                    <option value="CLOUD_OTHER">Otro Cloud</option>
+                    <option value="ON_PREMISE">On-Premise</option>
+                    <option value="SHARED">Hosting Compartido</option>
+                    <option value="VPS">VPS</option>
+                    <option value="DEDICATED">Servidor Dedicado</option>
+                    <option value="HYBRID">Híbrido</option>
+                  </Select>
+                </Field>
+                <Field label="Base de Datos">
+                  <Select value={data.swDevDatabase} onChange={(e) => update("swDevDatabase", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="POSTGRESQL">PostgreSQL</option>
+                    <option value="MYSQL">MySQL</option>
+                    <option value="MONGODB">MongoDB</option>
+                    <option value="SQLSERVER">SQL Server</option>
+                    <option value="ORACLE">Oracle</option>
+                    <option value="FIREBASE">Firebase</option>
+                    <option value="REDIS">Redis</option>
+                    <option value="OTHER">Otra</option>
+                  </Select>
+                </Field>
+                <Field label="Dominio">
+                  <Input value={data.swDevDomain} onChange={(e) => update("swDevDomain", e.target.value)} placeholder="ej: miempresa.com" className={inputClass} />
+                </Field>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="flex items-center gap-3 pt-5">
+                  <Switch id="ssl" checked={data.swDevSSL} onChange={(e) => update("swDevSSL", e.target.checked)} label="Certificado SSL" />
+                </div>
+                <div className="flex items-center gap-3 pt-5">
+                  <Switch id="responsive" checked={data.swDevMobileResponsive} onChange={(e) => update("swDevMobileResponsive", e.target.checked)} label="Diseño Responsive" />
+                </div>
+                <div className="flex items-center gap-3 pt-5">
+                  <Switch id="branding" checked={data.swDevBranding} onChange={(e) => update("swDevBranding", e.target.checked)} label="Requiere Branding" />
+                </div>
+              </div>
+            </div>
+
+            {/* Diseño y Seguridad */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label="Requisitos de Diseño / UI-UX">
+                <textarea value={data.swDevDesignReqs} onChange={(e) => update("swDevDesignReqs", e.target.value)} placeholder="Estilo visual, colores, wireframes, prototipos..." className={textareaClass + " min-h-[80px]"} />
+              </Field>
+              <Field label="Requisitos de Seguridad">
+                <textarea value={data.swDevSecurityReqs} onChange={(e) => update("swDevSecurityReqs", e.target.value)} placeholder="Autenticación, autorización, encriptación, GDPR..." className={textareaClass + " min-h-[80px]"} />
+              </Field>
+            </div>
+
+            {/* Desarrollo y Calidad */}
+            <div className="rounded-xl border border-navy-100 bg-navy-50/50 p-4 dark:border-white/10 dark:bg-white/5">
+              <p className="mb-3 text-xs font-semibold text-blue-600 dark:text-blue-400">Desarrollo y Calidad</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Field label="Autenticación">
+                  <Select value={data.swDevAuthType} onChange={(e) => update("swDevAuthType", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="EMAIL">Email / Contraseña</option>
+                    <option value="GOOGLE">Google OAuth</option>
+                    <option value="FACEBOOK">Facebook Login</option>
+                    <option value="SSO">SSO / Active Directory</option>
+                    <option value="2FA">2FA / MFA</option>
+                    <option value="BIOMETRIC">Biométrico</option>
+                    <option value="MULTIPLE">Múltiples métodos</option>
+                  </Select>
+                </Field>
+                <Field label="Control de Versiones">
+                  <Select value={data.swDevVersionControl} onChange={(e) => update("swDevVersionControl", e.target.value)} className={selectClass}>
+                    <option value="">Seleccionar</option>
+                    <option value="GIT">Git</option>
+                    <option value="GITHUB">GitHub</option>
+                    <option value="GITLAB">GitLab</option>
+                    <option value="BITBUCKET">Bitbucket</option>
+                    <option value="SVN">SVN</option>
+                  </Select>
+                </Field>
+                <div className="flex items-center gap-3 pt-5">
+                  <Switch id="cicd" checked={data.swDevCICD} onChange={(e) => update("swDevCICD", e.target.checked)} label="CI/CD Automatizado" />
+                </div>
+              </div>
+              <Field label="Tipos de Testing">
+                <textarea value={data.swDevTesting} onChange={(e) => update("swDevTesting", e.target.value)} placeholder="Unitario, integración, E2E, load testing, QA manual..." className={textareaClass} />
+              </Field>
+            </div>
+
+            {/* Presupuesto, Tiempo y Soporte */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Presupuesto Estimado">
+                <Input value={data.swDevBudget} onChange={(e) => update("swDevBudget", e.target.value)} placeholder="Ej: $5,000 - $10,000" className={inputClass} />
+              </Field>
+              <Field label="Tiempo Estimado">
                 <Input value={data.timelineExpectations} onChange={(e) => update("timelineExpectations", e.target.value)} placeholder="Ej: 3 meses" className={inputClass} />
               </Field>
               <div className="flex items-center gap-3 pt-5">
                 <Switch id="migration" checked={data.dataMigration} onChange={(e) => update("dataMigration", e.target.checked)} label="Requiere Migración de Datos" />
               </div>
             </div>
-            <Field label="Requisitos de Capacitación">
-              <textarea value={data.trainingRequirements} onChange={(e) => update("trainingRequirements", e.target.value)} placeholder="Áreas, usuarios, horarios..." className={textareaClass} />
-            </Field>
-          </CardContent>
-        </Card>
-      )}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Soporte y Mantenimiento">
+                <textarea value={data.swDevMaintenance} onChange={(e) => update("swDevMaintenance", e.target.value)} placeholder="SLA, tiempo de respuesta, canales de soporte..." className={textareaClass} />
+              </Field>
+              <Field label="Documentación Requerida">
+                <textarea value={data.swDevDocumentation} onChange={(e) => update("swDevDocumentation", e.target.value)} placeholder="Técnica, usuario, API, manuales..." className={textareaClass} />
+              </Field>
+              <Field label="Capacitación">
+                <textarea value={data.trainingRequirements} onChange={(e) => update("trainingRequirements", e.target.value)} placeholder="Áreas, usuarios, horarios..." className={textareaClass} />
+              </Field>
+            </div>
 
-      {/* Security Cameras - Conditional */}
-      {data.inspectionTypes.includes("SECURITY_CAMERAS") && (
-        <Card className="animate-fade-in-up animate-delay-3">
-          <CardContent className="space-y-4 py-5">
-            <SectionTitle icon={Camera} title="Cámaras de Seguridad" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              <Field label="Cantidad de Cámaras">
-                <Input type="number" value={data.cameraCount} onChange={(e) => update("cameraCount", e.target.value)} placeholder="0" className={inputClass} />
-              </Field>
-              <Field label="Tipo de Cámara">
-                <Select value={data.cameraType} onChange={(e) => update("cameraType", e.target.value)} className={selectClass}>
-                  <option value="">No especificado</option>
-                  <option value="DOME">Domo</option>
-                  <option value="BULLET">Bala</option>
-                  <option value="PTZ">PTZ</option>
-                  <option value="TURRET">Torreta</option>
-                  <option value="OTHER">Otro</option>
-                </Select>
-              </Field>
-              <Field label="Horas de Grabación">
-                <Input type="number" value={data.recordingHours} onChange={(e) => update("recordingHours", e.target.value)} placeholder="24" className={inputClass} />
-              </Field>
-              <div className="flex items-center gap-3 pt-5">
-                <Switch id="night" checked={data.nightVision} onChange={(e) => update("nightVision", e.target.checked)} label="Visión Nocturna" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="Requisitos de Almacenamiento">
-                <textarea value={data.storageRequirements} onChange={(e) => update("storageRequirements", e.target.value)} placeholder="TB necesarios, tipo de grabación..." className={textareaClass} />
-              </Field>
-              <Field label="Necesidades de Monitoreo">
-                <textarea value={data.monitoringNeeds} onChange={(e) => update("monitoringNeeds", e.target.value)} placeholder="Monitoreo remoto, central, móvil..." className={textareaClass} />
-              </Field>
-            </div>
+            <Field label="Notas Adicionales" className="w-full">
+              <textarea value={data.swDevAdditionalNotes} onChange={(e) => update("swDevAdditionalNotes", e.target.value)} placeholder="Cualquier información adicional relevante..." className={textareaClass + " min-h-[80px] w-full"} />
+            </Field>
           </CardContent>
         </Card>
       )}
 
       {/* Description & Findings */}
+      {showDescription && (
       <Card className="animate-fade-in-up animate-delay-4">
         <CardContent className="space-y-4 py-5">
           <SectionTitle icon={Cpu} title="Descripción y Hallazgos" />
-          <Field label="Descripción de la Inspección">
-            <textarea value={data.content} onChange={(e) => update("content", e.target.value)} placeholder="Descripción general de la inspección..." className={textareaClass + " min-h-[120px]"} />
+          <Field label="Descripción de la Inspección" className="w-full">
+            <textarea value={data.content} onChange={(e) => update("content", e.target.value)} placeholder="Descripción general de la inspección..." className={textareaClass + " min-h-[120px] w-full"} />
           </Field>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Hallazgos">
-              <textarea value={data.findings} onChange={(e) => update("findings", e.target.value)} placeholder="Observaciones de la inspección..." className={textareaClass} />
-            </Field>
-            <Field label="Recomendaciones">
-              <textarea value={data.recommendations} onChange={(e) => update("recommendations", e.target.value)} placeholder="Recomendaciones técnicas..." className={textareaClass} />
-            </Field>
-          </div>
-          <Field label="Justificación (No Aplica)">
-            <textarea value={data.justification} onChange={(e) => update("justification", e.target.value)} placeholder="Si no aplica, indicar por qué..." className={textareaClass} />
+          <Field label="Hallazgos" className="w-full">
+            <textarea value={data.findings} onChange={(e) => update("findings", e.target.value)} placeholder="Observaciones de la inspección..." className={textareaClass + " min-h-[100px] w-full"} />
           </Field>
-          <Field label="Observaciones Adicionales">
-            <textarea value={data.observations} onChange={(e) => update("observations", e.target.value)} placeholder="Notas adicionales..." className={textareaClass} />
+          <Field label="Recomendaciones" className="w-full">
+            <textarea value={data.recommendations} onChange={(e) => update("recommendations", e.target.value)} placeholder="Recomendaciones técnicas..." className={textareaClass + " min-h-[100px] w-full"} />
+          </Field>
+          <Field label="Observaciones Adicionales" className="w-full">
+            <textarea value={data.observations} onChange={(e) => update("observations", e.target.value)} placeholder="Notas adicionales..." className={textareaClass + " min-h-[100px] w-full"} />
           </Field>
         </CardContent>
       </Card>
+      )}
 
-      {/* File Uploads */}
+      {/* Diagnóstico de Viabilidad */}
+      {showDiagnostic && (
+      <Card className="animate-fade-in-up animate-delay-6">
+        <CardContent className="space-y-4 py-5">
+          <SectionTitle icon={CheckCircle2} title="Diagnóstico de Viabilidad" />
+          <div className={`rounded-xl border p-4 ${
+            diagnostic.status === "APPLIES" ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20" :
+            diagnostic.status === "DOES_NOT_APPLY" ? "border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20" :
+            "border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-900/20"
+          }`}>
+            <div className="flex items-center gap-3">
+              {diagnostic.status === "APPLIES" && <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />}
+              {diagnostic.status === "DOES_NOT_APPLY" && <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />}
+              {diagnostic.status === "APPLIES_WITH_OBSERVATIONS" && <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />}
+              <div>
+                <p className="text-lg font-bold text-navy-800 dark:text-white">
+                  {diagnostic.status === "APPLIES" && "APLICA"}
+                  {diagnostic.status === "DOES_NOT_APPLY" && "NO APLICA"}
+                  {diagnostic.status === "APPLIES_WITH_OBSERVATIONS" && "APLICA CON OBSERVACIONES"}
+                </p>
+                <p className="text-xs text-navy-500 dark:text-white/50">
+                  Escaneo automático de la inspección técnica
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-navy-100 dark:border-white/10">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-navy-100 bg-navy-50 dark:border-white/10 dark:bg-white/5">
+                  <th className="px-4 py-2 text-left font-medium text-navy-600 dark:text-white/70">Sección</th>
+                  <th className="px-4 py-2 text-center font-medium text-navy-600 dark:text-white/70">Estado</th>
+                  <th className="px-4 py-2 text-left font-medium text-navy-600 dark:text-white/70">Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {diagnostic.sections.map((s, i) => (
+                  <tr key={i} className="border-b border-navy-50 dark:border-white/5 last:border-0">
+                    <td className="px-4 py-2 font-medium text-navy-700 dark:text-white/80">{s.name}</td>
+                    <td className="px-4 py-2 text-center">
+                      {s.status === "OK" && <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"><CheckCircle2 className="h-3 w-3" /> OK</span>}
+                      {s.status === "WARNING" && <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"><AlertTriangle className="h-3 w-3" /> Alerta</span>}
+                      {s.status === "CRITICAL" && <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400"><XCircle className="h-3 w-3" /> Crítico</span>}
+                    </td>
+                    <td className="px-4 py-2 text-navy-600 dark:text-white/60">{s.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Archivos Adjuntos */}
+      {showFiles && (
       <Card className="animate-fade-in-up animate-delay-5">
         <CardContent className="space-y-4 py-5">
           <SectionTitle icon={Upload} title="Archivos Adjuntos" />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <label className="block text-xs font-medium text-navy-500 dark:text-white/50 mb-2">Planos y Diagramas</label>
-              <div className="rounded-xl border-2 border-dashed border-navy-200 p-4 text-center transition-colors hover:border-blue-400 dark:border-white/10">
-                <Upload className="mx-auto h-8 w-8 text-navy-300 dark:text-white/20" />
-                <p className="mt-1 text-xs text-navy-400 dark:text-white/30">Arrastra o selecciona archivos</p>
-                <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf" onChange={(e) => handleUpload(e.target.files, "blueprints")} className="absolute inset-0 cursor-pointer opacity-0" />
-                <Button variant="outline" size="sm" className="mt-2" onClick={() => document.querySelector<HTMLInputElement>('[data-upload="blueprints"]')?.click()} disabled={uploading}>
-                  {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Plus className="mr-1 h-3 w-3" />}Seleccionar
-                </Button>
-                <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf" data-upload="blueprints" onChange={(e) => handleUpload(e.target.files, "blueprints")} className="hidden" />
-              </div>
-              {data.blueprints.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {data.blueprints.map((f, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-lg bg-navy-50 px-3 py-1.5 dark:bg-white/5">
-                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline dark:text-blue-400 truncate max-w-[200px]">{f.name}</a>
-                      <button onClick={() => removeFile("blueprints", i)} className="ml-2 text-navy-400 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    </div>
-                  ))}
-                </div>
-              )}
+
+          {/* Fotos */}
+          <div>
+            <label className="block text-xs font-medium text-navy-500 dark:text-white/50 mb-2">Fotos del Sitio</label>
+            <div className="rounded-xl border-2 border-dashed border-navy-200 p-4 text-center transition-colors hover:border-blue-400 dark:border-white/10">
+              <Upload className="mx-auto h-8 w-8 text-navy-300 dark:text-white/20" />
+              <p className="mt-1 text-xs text-navy-400 dark:text-white/30">Imágenes (JPG, PNG, WebP)</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => document.querySelector<HTMLInputElement>('[data-upload="photos"]')?.click()} disabled={uploading}>
+                {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Plus className="mr-1 h-3 w-3" />}Seleccionar
+              </Button>
+              <input type="file" multiple accept="image/*" data-upload="photos" onChange={(e) => handleUpload(e.target.files, "photos")} className="hidden" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-navy-500 dark:text-white/50 mb-2">Fotos del Sitio</label>
-              <div className="rounded-xl border-2 border-dashed border-navy-200 p-4 text-center transition-colors hover:border-blue-400 dark:border-white/10">
-                <Upload className="mx-auto h-8 w-8 text-navy-300 dark:text-white/20" />
-                <p className="mt-1 text-xs text-navy-400 dark:text-white/30">Arrastra o selecciona imágenes</p>
-                <Button variant="outline" size="sm" className="mt-2" onClick={() => document.querySelector<HTMLInputElement>('[data-upload="photos"]')?.click()} disabled={uploading}>
-                  {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Plus className="mr-1 h-3 w-3" />}Seleccionar
-                </Button>
-                <input type="file" multiple accept="image/*" data-upload="photos" onChange={(e) => handleUpload(e.target.files, "photos")} className="hidden" />
+            {data.photos.length > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {data.photos.map((f, i) => (
+                  <div key={i} className="group relative overflow-hidden rounded-lg border border-navy-100 dark:border-white/10">
+                    <img src={f.url} alt={f.name} className="h-24 w-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/40" />
+                    <button onClick={() => removeFile("photos", i)} className="absolute right-1 top-1 hidden rounded-full bg-red-500 p-0.5 text-white group-hover:block"><X className="h-3 w-3" /></button>
+                    <p className="truncate px-1.5 py-0.5 text-[10px] text-navy-500 dark:text-white/40">{f.name}</p>
+                  </div>
+                ))}
               </div>
-              {data.photos.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {data.photos.map((f, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-lg bg-navy-50 px-3 py-1.5 dark:bg-white/5">
-                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline dark:text-blue-400 truncate max-w-[200px]">{f.name}</a>
-                      <button onClick={() => removeFile("photos", i)} className="ml-2 text-navy-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+            )}
+          </div>
+
+          {/* Videos */}
+          <div>
+            <label className="block text-xs font-medium text-navy-500 dark:text-white/50 mb-2">Videos</label>
+            <div className="rounded-xl border-2 border-dashed border-navy-200 p-4 text-center transition-colors hover:border-blue-400 dark:border-white/10">
+              <Upload className="mx-auto h-8 w-8 text-navy-300 dark:text-white/20" />
+              <p className="mt-1 text-xs text-navy-400 dark:text-white/30">Videos (MP4, MOV, AVI, WebM)</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => document.querySelector<HTMLInputElement>('[data-upload="videos"]')?.click()} disabled={uploading}>
+                {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Plus className="mr-1 h-3 w-3" />}Seleccionar
+              </Button>
+              <input type="file" multiple accept="video/mp4,video/quicktime,video/x-msvideo,video/webm" data-upload="videos" onChange={(e) => handleUpload(e.target.files, "videos")} className="hidden" />
+            </div>
+            {data.videos.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {data.videos.map((f, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg bg-navy-50 px-3 py-1.5 dark:bg-white/5">
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-3.5 w-3.5 text-purple-500" />
+                      <span className="text-xs text-navy-600 dark:text-white/60 truncate max-w-[250px]">{f.name}</span>
+                      <span className="text-[10px] text-navy-400 dark:text-white/30">({(f.size / 1024 / 1024).toFixed(1)} MB)</span>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-1">
+                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-navy-400 hover:text-blue-500"><Eye className="h-3 w-3" /></a>
+                      <button onClick={() => removeFile("videos", i)} className="text-navy-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Documentos */}
+          <div>
+            <label className="block text-xs font-medium text-navy-500 dark:text-white/50 mb-2">Documentos (PDF, Excel, Word)</label>
+            <div className="rounded-xl border-2 border-dashed border-navy-200 p-4 text-center transition-colors hover:border-blue-400 dark:border-white/10">
+              <Upload className="mx-auto h-8 w-8 text-navy-300 dark:text-white/20" />
+              <p className="mt-1 text-xs text-navy-400 dark:text-white/30">PDF, DOCX, XLSX, CSV</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => document.querySelector<HTMLInputElement>('[data-upload="documents"]')?.click()} disabled={uploading}>
+                {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Plus className="mr-1 h-3 w-3" />}Seleccionar
+              </Button>
+              <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv" data-upload="documents" onChange={(e) => handleUpload(e.target.files, "documents")} className="hidden" />
+            </div>
+            {data.documents.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {data.documents.map((f, i) => {
+                  const isPdf = f.type.includes("pdf");
+                  const isExcel = f.type.includes("sheet") || f.type.includes("excel") || f.name.endsWith(".xlsx") || f.name.endsWith(".xls");
+                  return (
+                    <div key={i} className="flex items-center justify-between rounded-lg bg-navy-50 px-3 py-1.5 dark:bg-white/5">
+                      <div className="flex items-center gap-2">
+                        <FileText className={`h-3.5 w-3.5 ${isPdf ? "text-red-500" : isExcel ? "text-green-500" : "text-blue-500"}`} />
+                        <span className="text-xs text-navy-600 dark:text-white/60 truncate max-w-[250px]">{f.name}</span>
+                        <span className="text-[10px] text-navy-400 dark:text-white/30">({(f.size / 1024).toFixed(0)} KB)</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-navy-400 hover:text-blue-500"><Eye className="h-3 w-3" /></a>
+                        <button onClick={() => removeFile("documents", i)} className="text-navy-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Planos */}
+          <div>
+            <label className="block text-xs font-medium text-navy-500 dark:text-white/50 mb-2">Planos y Diagramas</label>
+            <div className="rounded-xl border-2 border-dashed border-navy-200 p-4 text-center transition-colors hover:border-blue-400 dark:border-white/10">
+              <Upload className="mx-auto h-8 w-8 text-navy-300 dark:text-white/20" />
+              <p className="mt-1 text-xs text-navy-400 dark:text-white/30">PDF, DWG, DXF, imágenes</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => document.querySelector<HTMLInputElement>('[data-upload="blueprints"]')?.click()} disabled={uploading}>
+                {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Plus className="mr-1 h-3 w-3" />}Seleccionar
+              </Button>
+              <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf" data-upload="blueprints" onChange={(e) => handleUpload(e.target.files, "blueprints")} className="hidden" />
+            </div>
+            {data.blueprints.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {data.blueprints.map((f, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg bg-navy-50 px-3 py-1.5 dark:bg-white/5">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-orange-500" />
+                      <span className="text-xs text-navy-600 dark:text-white/60 truncate max-w-[250px]">{f.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-navy-400 hover:text-blue-500"><Eye className="h-3 w-3" /></a>
+                      <button onClick={() => removeFile("blueprints", i)} className="text-navy-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Firmas */}
+      {showSignatures && (
+      <Card className="animate-fade-in-up animate-delay-7">
+        <CardContent className="space-y-6 py-5">
+          <SectionTitle icon={Pencil} title="Firmas" />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Firma del Técnico */}
+            {lockedTec ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-medium text-navy-700 dark:text-white/80">Firma del Técnico</label>
+                    {loggedUser && <p className="text-xs text-navy-500 dark:text-white/40">{loggedUser.name || "Sin nombre"}{loggedUser.docType && loggedUser.docNumber ? ` — ${loggedUser.docType}-${loggedUser.docNumber}` : ""}</p>}
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"><Lock className="h-3 w-3" />Aceptada</span>
                 </div>
+                <div className="rounded-xl border-2 border-green-400 dark:border-green-600 bg-white dark:bg-white/[0.02] p-2">
+                  <img src={data.technicianSignature || ""} alt="Firma del técnico" className="w-full h-auto max-h-40 object-contain" />
+                </div>
+                <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">Firma aceptada y bloqueada — Solo consulta</p>
+              </div>
+            ) : (
+              <SignaturePad
+                label="Firma del Técnico"
+                value={data.technicianSignature}
+                onChange={(v) => update("technicianSignature", v)}
+                locked={lockedTec}
+                onLock={() => { if (!lockedTec) { setLockedTec(true); update("technicianSignatureLocked", true); } }}
+                subtitle={loggedUser ? `${loggedUser.name || "Sin nombre"}${loggedUser.docType && loggedUser.docNumber ? ` — ${loggedUser.docType}-${loggedUser.docNumber}` : ""}` : undefined}
+              />
+            )}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Field label="Nombre Completo *">
+                  <Input value={data.clientName} onChange={(e) => update("clientName", e.target.value)} placeholder="Nombre del cliente" className={inputClass} disabled={lockedClient} />
+                </Field>
+                <Field label="Cédula de Identidad">
+                  <div className="flex gap-2">
+                    <Select value={data.clientDocType} onChange={(e) => update("clientDocType", e.target.value)} className="w-20" disabled={lockedClient}>
+                      <option value="V">V</option>
+                      <option value="E">E</option>
+                      <option value="J">J</option>
+                      <option value="G">G</option>
+                    </Select>
+                    <Input value={data.clientDocNumber} onChange={(e) => update("clientDocNumber", e.target.value)} placeholder="12345678" className={inputClass} disabled={lockedClient} />
+                  </div>
+                </Field>
+                <Field label="Cargo">
+                  <Input value={data.clientPosition} onChange={(e) => update("clientPosition", e.target.value)} placeholder="Gerente, Coordinador..." className={inputClass} disabled={lockedClient} />
+                </Field>
+              </div>
+              {/* Firma del Cliente */}
+              {lockedClient ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-navy-700 dark:text-white/80">Firma del Cliente</label>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"><Lock className="h-3 w-3" />Aceptada</span>
+                  </div>
+                  <div className="rounded-xl border-2 border-green-400 dark:border-green-600 bg-white dark:bg-white/[0.02] p-2">
+                    <img src={data.clientSignature || ""} alt="Firma del cliente" className="w-full h-auto max-h-40 object-contain" />
+                  </div>
+                  <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">Firma aceptada y bloqueada — Solo consulta</p>
+                </div>
+              ) : (
+                <SignaturePad
+                  label="Firma del Cliente"
+                  value={data.clientSignature}
+                  onChange={(v) => update("clientSignature", v)}
+                  locked={lockedClient}
+                onLock={() => {
+                  if (!lockedClient) {
+                    if (!data.clientName?.trim()) { toast.error("Ingrese el nombre completo del cliente"); return; }
+                    if (!data.clientDocNumber?.trim()) { toast.error("Ingrese la cédula de identidad del cliente"); return; }
+                    if (!data.clientPosition?.trim()) { toast.error("Ingrese el cargo del cliente"); return; }
+                    if (!data.clientSignature) { toast.error("Dibuje la firma del cliente primero"); return; }
+                    setLockedClient(true);
+                    update("clientSignatureLocked", true);
+                  }
+                }}
+                />
               )}
             </div>
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Submit */}
-      <div className="flex justify-end gap-3 pb-8">
-        <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" />Cancelar</Button>
-      <Button onClick={handleSubmit} disabled={loading} className="min-w-[140px]">
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          {isEdit ? "Actualizar Inspección" : "Crear Inspección"}
-        </Button>
       </div>
+
+      {/* Submit - outside pointer-events-none wrapper */}
+      {isFinalized ? (
+        <div className="flex justify-between items-center pb-8">
+          <Button variant="destructive" onClick={() => { if (existingData?.id) setDeleteId(existingData.id); }} disabled={loading} className="gap-1.5">
+            <Trash2 className="h-4 w-4" />Eliminar
+          </Button>
+          <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" />Volver</Button>
+        </div>
+      ) : (
+        <div className="flex justify-end gap-3 pb-8">
+          <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" />Cancelar</Button>
+          <Button variant="outline" onClick={handleDraft} disabled={loading} className="gap-1.5">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Guardar Borrador
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading} className="min-w-[140px]">
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isEdit ? "Actualizar Inspección" : "Crear Inspección"}
+          </Button>
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Inspección"
+        message="¿Estás seguro de eliminar esta inspección técnica? Esta acción no se puede deshacer."
+        confirmLabel={deleting ? "Eliminando..." : "Eliminar"}
+        loading={deleting}
+      />
     </div>
   );
 }
 
 const defaultEq = { type: "", applies: false, brand: "", model: "", serialNumber: "", quantity: "", condition: "", status: "", specs: "", posProcessor: "", posRam: "", posStorageType: "", posStorageCapacity: "", posOs: "", posNotes: "" };
 
-function EquipmentFormModal({ isEditing, initial, onSave, onClose }: { isEditing: boolean; initial: Record<string, unknown>; onSave: (eq: typeof defaultEq) => void; onClose: () => void }) {
+function EquipmentFormModal({ isEditing, initial, onSave, onClose, inspectionTypes }: { isEditing: boolean; initial: Record<string, unknown>; onSave: (eq: typeof defaultEq) => void; onClose: () => void; inspectionTypes: string[] }) {
   const [eq, setEq] = useState({ ...defaultEq, ...initial, applies: "applies" in initial ? !!initial.applies : false });
   const [typeSelected, setTypeSelected] = useState(isEditing || !!initial.type);
   const selectClass = "h-9 rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white";
@@ -1823,12 +2119,22 @@ function EquipmentFormModal({ isEditing, initial, onSave, onClose }: { isEditing
             <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-white/50">Tipo de Equipo *</label>
             <Select value={eq.type} onChange={(e) => { updateField("type", e.target.value); setTypeSelected(!!e.target.value); }} className={selectClass}>
               <option value="">Seleccionar</option>
-              <option value="POS">Caja / POS</option>
-              <option value="SERVER">Servidor</option>
-              <option value="FISCAL_PRINTER">Impresora Fiscal</option>
-              <option value="SWITCH">Switch / Router</option>
-              <option value="UPS">UPS / Regulador</option>
-              <option value="OTHER">Otro</option>
+              {inspectionTypes.includes("SOFTWARE_DEV") ? (
+                <>
+                  <option value="POS">Caja / POS</option>
+                  <option value="SERVER">Servidor</option>
+                  <option value="FISCAL_PRINTER">Impresora Fiscal</option>
+                </>
+              ) : (
+                <>
+                  <option value="POS">Caja / POS</option>
+                  <option value="SERVER">Servidor</option>
+                  <option value="FISCAL_PRINTER">Impresora Fiscal</option>
+                  <option value="SWITCH">Switch / Router</option>
+                  <option value="UPS">UPS / Regulador</option>
+                  <option value="OTHER">Otro</option>
+                </>
+              )}
             </Select>
           </div>
 

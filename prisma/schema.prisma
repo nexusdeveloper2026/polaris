@@ -115,6 +115,10 @@ enum ReportType {
   ERP_INSTALLATION
   TELECOM_NETWORK
   SECURITY_CAMERAS
+  SOFTWARE_DEV
+  TECH_SUPPORT
+  SECURITY_ELECTRONIC
+  OTHER
 }
 
 enum ReportStatus {
@@ -545,6 +549,12 @@ model TechnicalReport {
   gmapUrl       String?
   connectionType ConnectionType?
   bandwidth     String?
+  speedDownload String?
+  speedUpload   String?
+  speedLatency  String?
+  speedConnectionType String?
+  speedIsp      String?
+  speedIp       String?
   powerSupply   String?   @db.Text
   airConditioning Boolean?
   airConditioningDetails String?
@@ -578,28 +588,27 @@ model TechnicalReport {
   cctvNetworkBandwidth   String?
   cctvAdditionalNotes    String? @db.Text
 
-  swDevType          String?
-  swCurrentSystem    String? @db.Text
-  swCurrentWebsite   String?
-  swCurrentApp       String?
-  swCurrentSoftware  String? @db.Text
-  swCurrentTech      String?
-  swCurrentIssues    String? @db.Text
-  swRequiredType     String?
-  swRequiredFeatures String? @db.Text
-  swRequiredModules  String? @db.Text
-  swTargetUsers      String?
-  swUserRoles        String?
-  swIntegrationNeeds String? @db.Text
-  swHostingType      String?
-  swDomainStatus     String?
-  swDomainName       String?
-  swBudget           String?
-  swTimeline         String?
-  swSecurityNeeds    String? @db.Text
-  swMaintenanceNeeds String?
-  swTrainingNeeds    String? @db.Text
-  swAdditionalNotes  String? @db.Text
+  secExistingSystem      String?
+  secType                String?
+  secCameraCount         Int?
+  secCameraType          String?
+  secCameraResolution    String?
+  secCameraBrand         String?
+  secCameraCondition     String?
+  secDvrNvrType          String?
+  secDvrNvrBrand         String?
+  secStorageDays         Int?
+  secCablingType         String?
+  secPowerSupply         String?
+  secMonitoringLocation  String?
+  secAreasToCover        String? @db.Text
+  secAreasCovered        String? @db.Text
+  secBlindSpots          String? @db.Text
+  secNightVision         Boolean @default(false)
+  secRemoteAccess        Boolean @default(false)
+  secAlarmIntegration    Boolean @default(false)
+  secAccessControl       Boolean @default(false)
+  secAdditionalNotes     String? @db.Text
 
   netCurrentTopology     String?
   netCurrentBandwidth    String?
@@ -672,6 +681,28 @@ model TechnicalReport {
   dataMigration Boolean?
   trainingRequirements String? @db.Text
 
+  swDevType              String?
+  swDevPlatform          String?
+  swDevFeatures          String? @db.Text
+  swDevUserRoles         String? @db.Text
+  swDevIntegrations      String? @db.Text
+  swDevHosting           String?
+  swDevDomain            String?
+  swDevSSL               Boolean @default(false)
+  swDevDatabase          String?
+  swDevDesignReqs        String? @db.Text
+  swDevMobileResponsive  Boolean @default(false)
+  swDevBranding          Boolean @default(false)
+  swDevSecurityReqs      String? @db.Text
+  swDevAuthType          String?
+  swDevVersionControl    String?
+  swDevCICD              Boolean @default(false)
+  swDevTesting           String? @db.Text
+  swDevBudget            String?
+  swDevMaintenance       String? @db.Text
+  swDevDocumentation     String? @db.Text
+  swDevAdditionalNotes   String? @db.Text
+
   cameraCount   Int?
   cameraType    CameraType?
   recordingHours Int?
@@ -687,6 +718,16 @@ model TechnicalReport {
 
   blueprints    Json?
   photos        Json?
+  videos        Json?
+  documents     Json?
+  technicianSignature String?
+  clientSignature     String?
+  clientName          String?
+  clientDocType       String?
+  clientDocNumber     String?
+  clientPosition      String?
+  technicianSignatureLocked Boolean @default(false)
+  clientSignatureLocked     Boolean @default(false)
   equipment     Json?
 
   createdBy     Int

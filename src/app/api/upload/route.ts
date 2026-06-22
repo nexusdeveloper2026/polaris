@@ -19,6 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No se enviaron archivos" }, { status: 400 });
     }
 
+    const MAX_SIZE = 200 * 1024 * 1024; // 200MB for videos
+    for (const file of files) {
+      if (file.size > MAX_SIZE) {
+        return NextResponse.json({ error: `El archivo "${file.name}" excede 200MB` }, { status: 400 });
+      }
+    }
+
     await mkdir(UPLOAD_DIR, { recursive: true });
 
     const uploaded: { name: string; url: string; size: number; type: string }[] = [];

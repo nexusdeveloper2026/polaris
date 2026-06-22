@@ -30,20 +30,24 @@ type Report = {
 };
 
 const typeLabels: Record<string, string> = {
-  ERP_INSTALLATION: "Instalación ERP",
+  SOFTWARE_DEV: "Software / Desarrollo",
   TELECOM_NETWORK: "Red Telecomunicaciones",
-  SECURITY_CAMERAS: "Cámaras Seguridad",
+  SECURITY_ELECTRONIC: "Seguridad Electrónica",
+  TECH_SUPPORT: "Soporte Técnico",
+  OTHER: "Otro",
 };
 
 const typeColors: Record<string, string> = {
-  ERP_INSTALLATION: "text-blue-500 bg-blue-50 dark:bg-blue-500/10",
+  SOFTWARE_DEV: "text-blue-500 bg-blue-50 dark:bg-blue-500/10",
   TELECOM_NETWORK: "text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10",
-  SECURITY_CAMERAS: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10",
+  SECURITY_ELECTRONIC: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10",
+  TECH_SUPPORT: "text-purple-500 bg-purple-50 dark:bg-purple-500/10",
+  OTHER: "text-gray-500 bg-gray-50 dark:bg-gray-500/10",
 };
 
 const statusLabels: Record<string, string> = {
   DRAFT: "Borrador",
-  SUBMITTED: "Enviado",
+  SUBMITTED: "Finalizado",
   UNDER_REVIEW: "En Revisión",
   APPROVED: "Aprobado",
   REJECTED: "Rechazado",
@@ -51,22 +55,10 @@ const statusLabels: Record<string, string> = {
 
 const statusConfig: Record<string, { variant: "default" | "primary" | "success" | "warning" | "danger" | "info"; icon: typeof Clock }> = {
   DRAFT: { variant: "default", icon: Clock },
-  SUBMITTED: { variant: "info", icon: Clock },
+  SUBMITTED: { variant: "success", icon: CheckCircle },
   UNDER_REVIEW: { variant: "warning", icon: AlertTriangle },
   APPROVED: { variant: "success", icon: CheckCircle },
   REJECTED: { variant: "danger", icon: XCircle },
-};
-
-const qualLabels: Record<string, string> = {
-  APPLIES: "Aplica",
-  DOES_NOT_APPLY: "No Aplica",
-  PENDING: "Pendiente",
-};
-
-const qualConfig: Record<string, { variant: "success" | "danger" | "warning"; icon: typeof CheckCircle }> = {
-  APPLIES: { variant: "success", icon: CheckCircle },
-  DOES_NOT_APPLY: { variant: "danger", icon: XCircle },
-  PENDING: { variant: "warning", icon: Clock },
 };
 
 export default function TechnicalReportsPage() {
@@ -75,7 +67,7 @@ export default function TechnicalReportsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [filters, setFilters] = useState({ reportType: "", status: "", qualification: "", search: "" });
+  const [filters, setFilters] = useState({ reportType: "", status: "", search: "" });
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
@@ -83,7 +75,6 @@ export default function TechnicalReportsPage() {
       const params = new URLSearchParams();
       if (filters.reportType) params.set("reportType", filters.reportType);
       if (filters.status) params.set("status", filters.status);
-      if (filters.qualification) params.set("qualification", filters.qualification);
       const res = await fetch(`/api/technical-reports?${params}`);
       if (res.ok) {
         const data = await res.json();
@@ -145,10 +136,6 @@ export default function TechnicalReportsPage() {
               <option value="">Todos los estados</option>
               {Object.entries(statusLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </Select>
-            <Select value={filters.qualification} onChange={(e) => setFilters({ ...filters, qualification: e.target.value })} className="w-40">
-              <option value="">Toda cualificación</option>
-              {Object.entries(qualLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </Select>
           </div>
         </CardContent>
       </Card>
@@ -168,7 +155,6 @@ export default function TechnicalReportsPage() {
                     <TableHead>Empresa</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead>Cualificación</TableHead>
                     <TableHead>Creado por</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="w-24"></TableHead>
@@ -177,7 +163,6 @@ export default function TechnicalReportsPage() {
                 <TableBody>
                   {filtered.map((r) => {
                     const sc = statusConfig[r.status] || statusConfig.DRAFT;
-                    const qc = qualConfig[r.qualification] || qualConfig.PENDING;
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="font-medium text-navy-900 dark:text-white">{r.title}</TableCell>
@@ -193,7 +178,6 @@ export default function TechnicalReportsPage() {
                           </div>
                         </TableCell>
                         <TableCell><Badge variant={sc.variant}>{statusLabels[r.status]}</Badge></TableCell>
-                        <TableCell><Badge variant={qc.variant}>{qualLabels[r.qualification]}</Badge></TableCell>
                         <TableCell className="text-sm text-navy-500 dark:text-white/50">{r.creator.name || r.creator.email}</TableCell>
                         <TableCell className="text-xs text-navy-400 dark:text-white/30">{formatDate(r.createdAt)}</TableCell>
                         <TableCell>

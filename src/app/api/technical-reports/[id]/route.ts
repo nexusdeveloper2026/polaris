@@ -25,6 +25,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Inspección no encontrada" }, { status: 404 });
     }
 
+    const jsonFields = ["equipment", "blueprints", "photos", "videos", "documents"] as const;
+    for (const field of jsonFields) {
+      const val = report[field];
+      if (typeof val === "string") {
+        try { (report as Record<string, unknown>)[field] = JSON.parse(val); } catch {}
+      }
+    }
+
     return NextResponse.json(report);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Error desconocido";
@@ -44,12 +52,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const {
       visitId, companyId, branchId, reportType, inspectionTypes, title, status, qualification,
       contactName, contactPhone, contactEmail, address, city, state, gmapUrl,
-      connectionType, bandwidth, powerSupply, airConditioning, airConditioningDetails, physicalSecurity,
+      connectionType, bandwidth, speedDownload, speedUpload, speedLatency, speedConnectionType, speedIsp, speedIp, powerSupply, airConditioning, airConditioningDetails, physicalSecurity,
       telecomNodes, telecomServers, telecomRacks, cablingType, fiberDistanceM, networkTopology, switchRouterDetails, upsRequirements,
       currentSystems, erpUsers, erpModules, timelineExpectations, dataMigration, trainingRequirements,
+      swDevType, swDevPlatform, swDevFeatures, swDevUserRoles, swDevIntegrations, swDevHosting, swDevDomain, swDevSSL, swDevDatabase, swDevDesignReqs, swDevMobileResponsive, swDevBranding, swDevSecurityReqs, swDevAuthType, swDevVersionControl, swDevCICD, swDevTesting, swDevBudget, swDevMaintenance, swDevDocumentation, swDevAdditionalNotes,
+      secExistingSystem, secType, secCameraCount, secCameraType, secCameraResolution, secCameraBrand, secCameraCondition, secDvrNvrType, secDvrNvrBrand, secStorageDays, secCablingType, secPowerSupply, secMonitoringLocation, secAreasToCover, secAreasCovered, secBlindSpots, secNightVision, secRemoteAccess, secAlarmIntegration, secAccessControl, secAdditionalNotes,
       cameraCount, cameraType, recordingHours, storageRequirements, monitoringNeeds, nightVision,
       content, findings, recommendations, justification, observations,
-      blueprints, photos, equipment,
+      blueprints, photos, videos, documents, equipment,
+      technicianSignature, clientSignature,
+      clientName, clientDocType, clientDocNumber, clientPosition,
+      technicianSignatureLocked, clientSignatureLocked,
     } = body;
 
     const report = await prisma.technicalReport.update({
@@ -59,6 +72,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(companyId !== undefined ? { companyId: parseInt(companyId) } : {}),
         ...(branchId !== undefined ? { branchId: branchId ? parseInt(branchId) : null } : {}),
         ...(reportType !== undefined ? { reportType } : {}),
+        ...(inspectionTypes !== undefined ? { inspectionTypes: Array.isArray(inspectionTypes) ? JSON.stringify(inspectionTypes) : inspectionTypes || null } : {}),
         ...(title !== undefined ? { title } : {}),
         ...(status !== undefined ? { status } : {}),
         ...(qualification !== undefined ? { qualification } : {}),
@@ -71,6 +85,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(gmapUrl !== undefined ? { gmapUrl: gmapUrl || null } : {}),
         ...(connectionType !== undefined ? { connectionType: connectionType || null } : {}),
         ...(bandwidth !== undefined ? { bandwidth: bandwidth || null } : {}),
+        ...(speedDownload !== undefined ? { speedDownload: speedDownload || null } : {}),
+        ...(speedUpload !== undefined ? { speedUpload: speedUpload || null } : {}),
+        ...(speedLatency !== undefined ? { speedLatency: speedLatency || null } : {}),
+        ...(speedConnectionType !== undefined ? { speedConnectionType: speedConnectionType || null } : {}),
+        ...(speedIsp !== undefined ? { speedIsp: speedIsp || null } : {}),
+        ...(speedIp !== undefined ? { speedIp: speedIp || null } : {}),
         ...(powerSupply !== undefined ? { powerSupply: powerSupply || null } : {}),
         ...(airConditioning !== undefined ? { airConditioning: airConditioning ?? false } : {}),
         ...(airConditioningDetails !== undefined ? { airConditioningDetails: airConditioningDetails || null } : {}),
@@ -89,6 +109,48 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(timelineExpectations !== undefined ? { timelineExpectations: timelineExpectations || null } : {}),
         ...(dataMigration !== undefined ? { dataMigration: dataMigration ?? false } : {}),
         ...(trainingRequirements !== undefined ? { trainingRequirements: trainingRequirements || null } : {}),
+        ...(swDevType !== undefined ? { swDevType: swDevType || null } : {}),
+        ...(swDevPlatform !== undefined ? { swDevPlatform: swDevPlatform || null } : {}),
+        ...(swDevFeatures !== undefined ? { swDevFeatures: swDevFeatures || null } : {}),
+        ...(swDevUserRoles !== undefined ? { swDevUserRoles: swDevUserRoles || null } : {}),
+        ...(swDevIntegrations !== undefined ? { swDevIntegrations: swDevIntegrations || null } : {}),
+        ...(swDevHosting !== undefined ? { swDevHosting: swDevHosting || null } : {}),
+        ...(swDevDomain !== undefined ? { swDevDomain: swDevDomain || null } : {}),
+        ...(swDevSSL !== undefined ? { swDevSSL: swDevSSL ?? false } : {}),
+        ...(swDevDatabase !== undefined ? { swDevDatabase: swDevDatabase || null } : {}),
+        ...(swDevDesignReqs !== undefined ? { swDevDesignReqs: swDevDesignReqs || null } : {}),
+        ...(swDevMobileResponsive !== undefined ? { swDevMobileResponsive: swDevMobileResponsive ?? false } : {}),
+        ...(swDevBranding !== undefined ? { swDevBranding: swDevBranding ?? false } : {}),
+        ...(swDevSecurityReqs !== undefined ? { swDevSecurityReqs: swDevSecurityReqs || null } : {}),
+        ...(swDevAuthType !== undefined ? { swDevAuthType: swDevAuthType || null } : {}),
+        ...(swDevVersionControl !== undefined ? { swDevVersionControl: swDevVersionControl || null } : {}),
+        ...(swDevCICD !== undefined ? { swDevCICD: swDevCICD ?? false } : {}),
+        ...(swDevTesting !== undefined ? { swDevTesting: swDevTesting || null } : {}),
+        ...(swDevBudget !== undefined ? { swDevBudget: swDevBudget || null } : {}),
+        ...(swDevMaintenance !== undefined ? { swDevMaintenance: swDevMaintenance || null } : {}),
+        ...(swDevDocumentation !== undefined ? { swDevDocumentation: swDevDocumentation || null } : {}),
+        ...(swDevAdditionalNotes !== undefined ? { swDevAdditionalNotes: swDevAdditionalNotes || null } : {}),
+        ...(secExistingSystem !== undefined ? { secExistingSystem: secExistingSystem || null } : {}),
+        ...(secType !== undefined ? { secType: secType || null } : {}),
+        ...(secCameraCount !== undefined ? { secCameraCount: secCameraCount ? parseInt(String(secCameraCount)) : null } : {}),
+        ...(secCameraType !== undefined ? { secCameraType: secCameraType || null } : {}),
+        ...(secCameraResolution !== undefined ? { secCameraResolution: secCameraResolution || null } : {}),
+        ...(secCameraBrand !== undefined ? { secCameraBrand: secCameraBrand || null } : {}),
+        ...(secCameraCondition !== undefined ? { secCameraCondition: secCameraCondition || null } : {}),
+        ...(secDvrNvrType !== undefined ? { secDvrNvrType: secDvrNvrType || null } : {}),
+        ...(secDvrNvrBrand !== undefined ? { secDvrNvrBrand: secDvrNvrBrand || null } : {}),
+        ...(secStorageDays !== undefined ? { secStorageDays: secStorageDays ? parseInt(String(secStorageDays)) : null } : {}),
+        ...(secCablingType !== undefined ? { secCablingType: secCablingType || null } : {}),
+        ...(secPowerSupply !== undefined ? { secPowerSupply: secPowerSupply || null } : {}),
+        ...(secMonitoringLocation !== undefined ? { secMonitoringLocation: secMonitoringLocation || null } : {}),
+        ...(secAreasToCover !== undefined ? { secAreasToCover: secAreasToCover || null } : {}),
+        ...(secAreasCovered !== undefined ? { secAreasCovered: secAreasCovered || null } : {}),
+        ...(secBlindSpots !== undefined ? { secBlindSpots: secBlindSpots || null } : {}),
+        ...(secNightVision !== undefined ? { secNightVision: secNightVision ?? false } : {}),
+        ...(secRemoteAccess !== undefined ? { secRemoteAccess: secRemoteAccess ?? false } : {}),
+        ...(secAlarmIntegration !== undefined ? { secAlarmIntegration: secAlarmIntegration ?? false } : {}),
+        ...(secAccessControl !== undefined ? { secAccessControl: secAccessControl ?? false } : {}),
+        ...(secAdditionalNotes !== undefined ? { secAdditionalNotes: secAdditionalNotes || null } : {}),
         ...(cameraCount !== undefined ? { cameraCount: cameraCount ? parseInt(String(cameraCount)) : null } : {}),
         ...(cameraType !== undefined ? { cameraType: cameraType || null } : {}),
         ...(recordingHours !== undefined ? { recordingHours: recordingHours ? parseInt(String(recordingHours)) : null } : {}),
@@ -102,7 +164,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(observations !== undefined ? { observations: observations || null } : {}),
         ...(blueprints !== undefined ? { blueprints: blueprints || undefined } : {}),
         ...(photos !== undefined ? { photos: photos || undefined } : {}),
-        ...(equipment !== undefined ? { equipment: Array.isArray(equipment) ? JSON.stringify(equipment) : equipment || undefined } : {}),
+        ...(videos !== undefined ? { videos: videos || undefined } : {}),
+        ...(documents !== undefined ? { documents: documents || undefined } : {}),
+        ...(equipment !== undefined ? { equipment: equipment || undefined } : {}),
+        ...(technicianSignature !== undefined ? { technicianSignature: technicianSignature || null } : {}),
+        ...(clientSignature !== undefined ? { clientSignature: clientSignature || null } : {}),
+        ...(clientName !== undefined ? { clientName: clientName || null } : {}),
+        ...(clientDocType !== undefined ? { clientDocType: clientDocType || null } : {}),
+        ...(clientDocNumber !== undefined ? { clientDocNumber: clientDocNumber || null } : {}),
+        ...(clientPosition !== undefined ? { clientPosition: clientPosition || null } : {}),
+        ...(technicianSignatureLocked !== undefined ? { technicianSignatureLocked: technicianSignatureLocked ?? false } : {}),
+        ...(clientSignatureLocked !== undefined ? { clientSignatureLocked: clientSignatureLocked ?? false } : {}),
       },
       include: {
         company: { select: { id: true, name: true, taxId: true } },

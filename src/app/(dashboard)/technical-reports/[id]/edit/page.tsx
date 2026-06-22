@@ -3,166 +3,15 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import TechnicalReportForm from "../form";
+import type { ReportData } from "../form";
 
 type Company = { id: number; name: string; taxId: string | null };
-type ReportData = {
-  id: number;
-  companyId: string;
-  branchId: string;
-  reportType: string;
-  inspectionTypes: string[];
-  title: string;
-  status: string;
-  qualification: string;
-  contactName: string;
-  contactPhone: string;
-  contactEmail: string;
-  address: string;
-  city: string;
-  state: string;
-  gmapUrl: string;
-  connectionType: string;
-  bandwidth: string;
-  powerSupply: string;
-  airConditioning: boolean;
-  airConditioningDetails: string;
-  physicalSecurity: string;
-  telecomNodes: string;
-  telecomServers: string;
-  telecomRacks: string;
-  cablingType: string;
-  fiberDistanceM: string;
-  networkTopology: string;
-  switchRouterDetails: string;
-  upsRequirements: string;
-  currentSystems: string;
-  erpUsers: string;
-  erpModules: string;
-  timelineExpectations: string;
-  dataMigration: boolean;
-  trainingRequirements: string;
-  cameraCount: string;
-  cameraType: string;
-  recordingHours: string;
-  storageRequirements: string;
-  monitoringNeeds: string;
-  nightVision: boolean;
-  content: string;
-  findings: string;
-  recommendations: string;
-  justification: string;
-  observations: string;
-  cctvExistingSystem: string;
-  cctvCameraCount: string;
-  cctvCameraType: string;
-  cctvCameraResolution: string;
-  cctvCameraBrand: string;
-  cctvCameraCondition: string;
-  cctvDvrNvrBrand: string;
-  cctvDvrNvrChannels: string;
-  cctvStorageCapacity: string;
-  cctvRetentionDays: string;
-  cctvCablingType: string;
-  cctvCablingLength: string;
-  cctvPowerSupply: string;
-  cctvMonitoringLocation: string;
-  cctvAreasToCover: string;
-  cctvAreasCovered: string;
-  cctvBlindSpots: string;
-  cctvInstallationType: string;
-  cctvNightVision: boolean;
-  cctvRemoteAccess: boolean;
-  cctvAlarmIntegration: boolean;
-  cctvAccessControl: boolean;
-  cctvMountingLocations: string;
-  cctvLightingConditions: string;
-  cctvWeatherExposure: string;
-  cctvNetworkBandwidth: string;
-  cctvAdditionalNotes: string;
-  swDevType: string;
-  swCurrentSystem: string;
-  swCurrentWebsite: string;
-  swCurrentApp: string;
-  swCurrentSoftware: string;
-  swCurrentTech: string;
-  swCurrentIssues: string;
-  swRequiredType: string;
-  swRequiredFeatures: string;
-  swRequiredModules: string;
-  swTargetUsers: string;
-  swUserRoles: string;
-  swIntegrationNeeds: string;
-  swHostingType: string;
-  swDomainStatus: string;
-  swDomainName: string;
-  swBudget: string;
-  swTimeline: string;
-  swSecurityNeeds: string;
-  swMaintenanceNeeds: string;
-  swTrainingNeeds: string;
-  swAdditionalNotes: string;
-  netCurrentTopology: string;
-  netCurrentBandwidth: string;
-  netCurrentIsp: string;
-  netCurrentRouter: string;
-  netCurrentSwitch: string;
-  netCurrentFirewall: string;
-  netCurrentWifiAp: string;
-  netCurrentCabling: string;
-  netCurrentServerRoom: string;
-  netCurrentIssues: string;
-  netRequiredTopology: string;
-  netRequiredBandwidth: string;
-  netRequiredEquipment: string;
-  netRequiredCabling: string;
-  netRequiredSecurity: string;
-  netRequiredVpn: boolean;
-  netRequiredWifi: boolean;
-  netRequiredVoip: boolean;
-  netRequiredBackup: boolean;
-  netRequiredMonitoring: boolean;
-  netWifiCoverage: string;
-  netWifiZones: string;
-  netVlanNeeds: string;
-  netRemoteAccessNeeds: string;
-  netBackupStrategy: string;
-  netMaintenanceNeeds: string;
-  netAdditionalNotes: string;
-  supType: string;
-  supRemoteHours: string;
-  supOnSiteHours: string;
-  supScheduleDays: string;
-  supScheduleTimeStart: string;
-  supScheduleTimeEnd: string;
-  supResponseTime: string;
-  supCurrentEquipBrand: string;
-  supCurrentEquipModel: string;
-  supCurrentEquipQty: string;
-  supCurrentEquipCondition: string;
-  supCurrentEquipWarranty: string;
-  supCurrentSoftware: string;
-  supCurrentIssues: string;
-  supRequiredServices: string;
-  supRequiredCoverage: string;
-  supRequiredSlA: string;
-  supRequiredTraining: boolean;
-  supRequiredDocumentation: boolean;
-  supRequiredInventory: boolean;
-  supRequiredOnSiteVisit: boolean;
-  supRequiredRemoteAccess: boolean;
-  supClientExpectations: string;
-  supBudgetRange: string;
-  supContractDuration: string;
-  supAdditionalNotes: string;
-  blueprints: { name: string; url: string; size: number; type: string }[];
-  photos: { name: string; url: string; size: number; type: string }[];
-  equipment: { type: string; applies: boolean; brand: string; model: string; serialNumber: string; quantity: string; condition: string; status: string; specs: string; posProcessor: string; posRam: string; posStorageType: string; posStorageCapacity: string; posOs: string; posNotes: string }[];
-};
+type ReportDataWithId = ReportData & { id: number };
 
 export default function EditTechnicalReportPage() {
   const params = useParams();
   const router = useRouter();
-  const [data, setData] = useState<ReportData | null>(null);
+  const [data, setData] = useState<ReportDataWithId | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -187,6 +36,12 @@ export default function EditTechnicalReportPage() {
         gmapUrl: json.gmapUrl || "",
         connectionType: json.connectionType || "",
         bandwidth: json.bandwidth || "",
+        speedDownload: json.speedDownload || "",
+        speedUpload: json.speedUpload || "",
+        speedLatency: json.speedLatency || "",
+        speedConnectionType: json.speedConnectionType || "",
+        speedIsp: json.speedIsp || "",
+        speedIp: json.speedIp || "",
         powerSupply: json.powerSupply || "",
         airConditioning: json.airConditioning ?? false,
         airConditioningDetails: json.airConditioningDetails || "",
@@ -218,28 +73,6 @@ export default function EditTechnicalReportPage() {
         cctvWeatherExposure: json.cctvWeatherExposure || "",
         cctvNetworkBandwidth: json.cctvNetworkBandwidth || "",
         cctvAdditionalNotes: json.cctvAdditionalNotes || "",
-        swDevType: json.swDevType || "",
-        swCurrentSystem: json.swCurrentSystem || "",
-        swCurrentWebsite: json.swCurrentWebsite || "",
-        swCurrentApp: json.swCurrentApp || "",
-        swCurrentSoftware: json.swCurrentSoftware || "",
-        swCurrentTech: json.swCurrentTech || "",
-        swCurrentIssues: json.swCurrentIssues || "",
-        swRequiredType: json.swRequiredType || "",
-        swRequiredFeatures: json.swRequiredFeatures || "",
-        swRequiredModules: json.swRequiredModules || "",
-        swTargetUsers: json.swTargetUsers ? String(json.swTargetUsers) : "",
-        swUserRoles: json.swUserRoles || "",
-        swIntegrationNeeds: json.swIntegrationNeeds || "",
-        swHostingType: json.swHostingType || "",
-        swDomainStatus: json.swDomainStatus || "",
-        swDomainName: json.swDomainName || "",
-        swBudget: json.swBudget || "",
-        swTimeline: json.swTimeline || "",
-        swSecurityNeeds: json.swSecurityNeeds || "",
-        swMaintenanceNeeds: json.swMaintenanceNeeds || "",
-        swTrainingNeeds: json.swTrainingNeeds || "",
-        swAdditionalNotes: json.swAdditionalNotes || "",
         netCurrentTopology: json.netCurrentTopology || "",
         netCurrentBandwidth: json.netCurrentBandwidth || "",
         netCurrentIsp: json.netCurrentIsp || "",
@@ -307,6 +140,48 @@ export default function EditTechnicalReportPage() {
         timelineExpectations: json.timelineExpectations || "",
         dataMigration: json.dataMigration ?? false,
         trainingRequirements: json.trainingRequirements || "",
+        swDevType: json.swDevType || "",
+        swDevPlatform: json.swDevPlatform || "",
+        swDevFeatures: json.swDevFeatures || "",
+        swDevUserRoles: json.swDevUserRoles || "",
+        swDevIntegrations: json.swDevIntegrations || "",
+        swDevHosting: json.swDevHosting || "",
+        swDevDomain: json.swDevDomain || "",
+        swDevSSL: json.swDevSSL ?? false,
+        swDevDatabase: json.swDevDatabase || "",
+        swDevDesignReqs: json.swDevDesignReqs || "",
+        swDevMobileResponsive: json.swDevMobileResponsive ?? false,
+        swDevBranding: json.swDevBranding ?? false,
+        swDevSecurityReqs: json.swDevSecurityReqs || "",
+        swDevAuthType: json.swDevAuthType || "",
+        swDevVersionControl: json.swDevVersionControl || "",
+        swDevCICD: json.swDevCICD ?? false,
+        swDevTesting: json.swDevTesting || "",
+        swDevBudget: json.swDevBudget || "",
+        swDevMaintenance: json.swDevMaintenance || "",
+        swDevDocumentation: json.swDevDocumentation || "",
+        swDevAdditionalNotes: json.swDevAdditionalNotes || "",
+        secExistingSystem: json.secExistingSystem || "",
+        secType: json.secType || "",
+        secCameraCount: json.secCameraCount ? String(json.secCameraCount) : "",
+        secCameraType: json.secCameraType || "",
+        secCameraResolution: json.secCameraResolution || "",
+        secCameraBrand: json.secCameraBrand || "",
+        secCameraCondition: json.secCameraCondition || "",
+        secDvrNvrType: json.secDvrNvrType || "",
+        secDvrNvrBrand: json.secDvrNvrBrand || "",
+        secStorageDays: json.secStorageDays ? String(json.secStorageDays) : "",
+        secCablingType: json.secCablingType || "",
+        secPowerSupply: json.secPowerSupply || "",
+        secMonitoringLocation: json.secMonitoringLocation || "",
+        secAreasToCover: json.secAreasToCover || "",
+        secAreasCovered: json.secAreasCovered || "",
+        secBlindSpots: json.secBlindSpots || "",
+        secNightVision: json.secNightVision ?? false,
+        secRemoteAccess: json.secRemoteAccess ?? false,
+        secAlarmIntegration: json.secAlarmIntegration ?? false,
+        secAccessControl: json.secAccessControl ?? false,
+        secAdditionalNotes: json.secAdditionalNotes || "",
         cameraCount: json.cameraCount ? String(json.cameraCount) : "",
         cameraType: json.cameraType || "",
         recordingHours: json.recordingHours ? String(json.recordingHours) : "",
@@ -320,7 +195,17 @@ export default function EditTechnicalReportPage() {
         observations: json.observations || "",
         blueprints: Array.isArray(json.blueprints) ? json.blueprints : [],
         photos: Array.isArray(json.photos) ? json.photos : [],
-        equipment: Array.isArray(json.equipment) ? json.equipment : [],
+        videos: Array.isArray(json.videos) ? json.videos : [],
+        documents: Array.isArray(json.documents) ? json.documents : [],
+        technicianSignature: json.technicianSignature || null,
+        clientSignature: json.clientSignature || null,
+        clientName: json.clientName || "",
+        clientDocType: json.clientDocType || "V",
+        clientDocNumber: json.clientDocNumber || "",
+        clientPosition: json.clientPosition || "",
+        technicianSignatureLocked: json.technicianSignatureLocked ?? false,
+        clientSignatureLocked: json.clientSignatureLocked ?? false,
+        equipment: Array.isArray(json.equipment) ? json.equipment : typeof json.equipment === 'string' ? (() => { try { return JSON.parse(json.equipment); } catch { return []; } })() : [],
       });
     });
   }, [params.id]);
